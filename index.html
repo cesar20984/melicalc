@@ -804,6 +804,34 @@
       loadingFromDb = false;
     }
 
+    function applyUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.size) return false;
+
+      loadingFromDb = true;
+      if (params.has('productGross')) els.productGross.value = params.get('productGross');
+      if (params.has('includeShipping')) els.includeShipping.checked = params.get('includeShipping') !== 'false';
+      if (params.has('shippingGross')) els.shippingGross.value = params.get('shippingGross');
+      if (params.has('packagingCost')) els.packagingCost.value = params.get('packagingCost');
+      if (params.has('profitPercent')) {
+        els.marginMode.value = 'percent';
+        els.profitPercent.value = params.get('profitPercent');
+      }
+      if (params.has('profitAmount')) {
+        els.marginMode.value = 'amount';
+        els.profitAmount.value = params.get('profitAmount');
+      }
+      if (params.has('manualFinalPrice') || params.has('finalPriceGross')) {
+        els.marginMode.value = 'price';
+        els.manualFinalPrice.value = params.get('manualFinalPrice') || params.get('finalPriceGross');
+      }
+      if (params.has('mlRate')) els.mlRate.value = params.get('mlRate');
+      recalc();
+      loadingFromDb = false;
+      setStatus('Datos cargados desde URL.');
+      return true;
+    }
+
     async function saveSettings() {
       if (loadingFromDb) return;
       const value = {
@@ -1149,12 +1177,14 @@
           setStatus('Modo local: los datos se guardan en este navegador.');
         }
         await loadSettings();
+        applyUrlParams();
         await renderSavedCalculations();
       } catch (error) {
         if (!useLocalStorageOnly && 'indexedDB' in window) {
           useLocalStorageOnly = true;
           localDb = await openLocalDb();
           await loadSettings();
+          applyUrlParams();
           await renderSavedCalculations();
           setStatus('Neon no disponible; usando guardado local.');
           return;

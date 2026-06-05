@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MeliCalc Addon</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <section class="top">
+      <strong id="siteBadge">Sitio</strong>
+      <button id="extractBtn" type="button">Extraer</button>
+    </section>
+
+    <section class="panel">
+      <details>
+        <summary>Configuracion</summary>
+        <label>OpenAI API key
+          <input id="openaiApiKey" type="password" autocomplete="off" placeholder="sk-...">
+        </label>
+        <label>Modelo
+          <input id="openaiModel" type="text" value="gpt-5.2">
+        </label>
+        <div class="grid">
+          <label>M3 barco CLP
+            <input id="seaM3Price" type="number" value="0">
+          </label>
+          <label>Ad valorem %
+            <input id="adValoremPercent" type="number" value="6" step="0.01">
+          </label>
+        </div>
+        <label>Manejo llegada CLP
+          <input id="handlingFee" type="number" value="0">
+        </label>
+        <div class="grid">
+          <label>DHL CLP/kg
+            <input id="dhlRateKg" type="number" value="0">
+          </label>
+          <label>UPS CLP/kg
+            <input id="upsRateKg" type="number" value="0">
+          </label>
+          <label>FedEx CLP/kg
+            <input id="fedexRateKg" type="number" value="0">
+          </label>
+        </div>
+        <button id="saveSettingsBtn" type="button">Guardar configuracion</button>
+      </details>
+    </section>
+
+    <section class="panel">
+      <h2>Producto</h2>
+      <label>Precio producto
+        <input id="productPrice" type="number" min="0" step="0.01">
+      </label>
+      <div class="grid">
+        <label>Moneda
+          <input id="currency" type="text" value="USD">
+        </label>
+        <label>USD a CLP
+          <input id="usdToClp" type="number" value="950">
+        </label>
+      </div>
+      <div class="grid">
+        <label>Cantidad
+          <input id="quantity" type="number" value="1" min="1" step="1">
+        </label>
+        <label>Peso kg/u
+          <input id="weightKg" type="number" min="0" step="0.01">
+        </label>
+      </div>
+      <div class="grid dims">
+        <label>L cm
+          <input id="lengthCm" type="number" min="0" step="0.01">
+        </label>
+        <label>A cm
+          <input id="widthCm" type="number" min="0" step="0.01">
+        </label>
+        <label>H cm
+          <input id="heightCm" type="number" min="0" step="0.01">
+        </label>
+      </div>
+    </section>
+
+    <section class="panel" id="shippingPanel">
+      <h2>Envio</h2>
+      <div class="result-grid">
+        <div>
+          <span>CBM unidad</span>
+          <strong id="unitCbm">0</strong>
+        </div>
+        <div>
+          <span>Unidades/m3</span>
+          <strong id="unitsPerM3">0</strong>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div>
+          <span>Barco + imp.</span>
+          <strong id="seaTotal">$0</strong>
+        </div>
+        <div>
+          <span>Avion menor</span>
+          <strong id="airBest">$0</strong>
+        </div>
+      </div>
+      <div id="airRows" class="mini-list"></div>
+    </section>
+
+    <section class="actions">
+      <button id="calcSeaBtn" type="button">Abrir con barco</button>
+      <button id="calcAirBtn" type="button">Abrir con avion</button>
+      <button id="calcNoShipBtn" type="button">Abrir sin envio</button>
+    </section>
+
+    <section class="panel notes">
+      <div id="status">Listo.</div>
+      <div id="llmNotes"></div>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

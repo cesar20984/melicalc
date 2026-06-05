@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "vercel dev",
-    "check": "node --check api/settings.js && node --check api/calculations.js && node --check api/calculate.js && node --check api/calc-core.js"
+    "check": "node --check api/settings.js && node --check api/calculations.js && node --check api/calculate.js && node --check api/calc-core.js && node --check extension/popup.js && node --check extension/content.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1"

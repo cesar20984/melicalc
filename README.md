@@ -76,3 +76,31 @@ Para calcular desde precio final:
 ```
 
 El endpoint tiene CORS abierto para que pueda llamarse desde una extension de Chrome.
+
+## Extension Chrome
+
+La carpeta `extension/` contiene un addon Manifest V3.
+
+Para instalarlo en modo desarrollo:
+
+1. Abre Chrome.
+2. Ve a `chrome://extensions`.
+3. Activa `Modo desarrollador`.
+4. Click en `Cargar descomprimida`.
+5. Selecciona la carpeta `extension`.
+
+El addon puede:
+
+- Detectar si la pestana actual es Alibaba o AliExpress.
+- Extraer precio, dimensiones y peso con OpenAI usando salida JSON estructurada.
+- Calcular unidades por metro cubico, envio por barco y envio por avion.
+- Abrir `https://melicalc-xi.vercel.app/` con los datos precargados.
+
+Configura dentro del popup:
+
+- OpenAI API key.
+- Modelo OpenAI. El valor inicial es `gpt-5.2`; si tu cuenta tiene otro modelo, cambialo ahi.
+- Precio del m3 por barco.
+- Ad valorem, manejo y tarifas por kg para DHL/UPS/FedEx.
+
+Nota: DHL/UPS/FedEx quedan como tarifas configurables por kg. Para consultar APIs oficiales reales de cada courier faltan sus credenciales y contratos de API.

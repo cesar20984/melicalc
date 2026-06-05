@@ -1,0 +1,169 @@
+:root {
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --ink: #17202a;
+  --muted: #667085;
+  --line: #d7dee8;
+  --accent: #1d4ed8;
+  --ok: #047857;
+  --warn: #92400e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 390px;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.35 Arial, Helvetica, sans-serif;
+}
+
+main {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.top,
+.panel,
+.actions {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#siteBadge {
+  color: var(--accent);
+}
+
+.panel {
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+}
+
+input,
+button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 16px;
+}
+
+button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #fff;
+  color: var(--accent);
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+details {
+  display: grid;
+  gap: 8px;
+}
+
+details[open] {
+  gap: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dims {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.result-grid div {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  background: #fbfcff;
+}
+
+.result-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.result-grid strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ok);
+  font-size: 1.05rem;
+}
+
+.mini-list {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+}
+
+.mini-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.actions button {
+  min-height: 40px;
+  padding: 6px;
+  font-size: 0.82rem;
+}
+
+.notes {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.hidden {
+  display: none;
+}

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "MeliCalc Importador",
+  "version": "0.1.0",
+  "description": "Extrae precios de Alibaba/AliExpress, estima envio e impuestos, y abre MeliCalc con los datos.",
+  "action": {
+    "default_title": "MeliCalc",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.alibaba.com/*",
+    "https://*.aliexpress.com/*",
+    "https://api.openai.com/*",
+    "https://melicalc-xi.vercel.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.alibaba.com/*",
+        "https://*.aliexpress.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
