@@ -31,3 +31,48 @@ npm start
 ```
 
 Si abres `index.html` directamente sin servidor, la app usa IndexedDB local como respaldo.
+
+## API de calculo
+
+La app expone un endpoint para llamarlo desde un addon de Chrome u otro cliente:
+
+```txt
+GET /api/calculate
+POST /api/calculate
+```
+
+Ejemplo GET:
+
+```txt
+/api/calculate?productGross=29000&includeShipping=true&shippingGross=3500&packagingCost=150&profitPercent=40&mlRate=19
+```
+
+Ejemplo POST:
+
+```json
+{
+  "productGross": 29000,
+  "includeShipping": true,
+  "shippingGross": 3500,
+  "packagingCost": 150,
+  "marginMode": "percent",
+  "profitPercent": 40,
+  "mlRate": 19
+}
+```
+
+Para calcular desde precio final:
+
+```json
+{
+  "productGross": 29000,
+  "includeShipping": true,
+  "shippingGross": 3500,
+  "packagingCost": 150,
+  "marginMode": "price",
+  "manualFinalPrice": 56990,
+  "mlRate": 19
+}
+```
+
+El endpoint tiene CORS abierto para que pueda llamarse desde una extension de Chrome.
