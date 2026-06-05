@@ -30,6 +30,12 @@ const els = {
   seaUnit: document.getElementById('seaUnit'),
   airBest: document.getElementById('airBest'),
   airRows: document.getElementById('airRows'),
+  seaProductUnit: document.getElementById('seaProductUnit'),
+  seaFreightUnit: document.getElementById('seaFreightUnit'),
+  seaAdValoremUnit: document.getElementById('seaAdValoremUnit'),
+  seaHandlingUnit: document.getElementById('seaHandlingUnit'),
+  seaIvaUnit: document.getElementById('seaIvaUnit'),
+  seaBreakdownTotal: document.getElementById('seaBreakdownTotal'),
   calcSeaBtn: document.getElementById('calcSeaBtn'),
   calcAirBtn: document.getElementById('calcAirBtn'),
   status: document.getElementById('status'),
@@ -320,7 +326,12 @@ function importTotals(extraFreightClp) {
     total,
     extra,
     extraPerUnit: extra / qty,
-    landedPerUnit: total / qty
+    landedPerUnit: total / qty,
+    productPerUnit: product / qty,
+    freightPerUnit: extraFreightClp / qty,
+    adValoremPerUnit: adValorem / qty,
+    handlingPerUnit: handling / qty,
+    ivaPerUnit: iva / qty
   };
 }
 
@@ -355,6 +366,12 @@ function recalc() {
   els.seaUnit.textContent = money(seaTotals.landedPerUnit);
   els.airBest.textContent = bestAir ? `${bestAir.name} ${money(bestAir.totals.landedPerUnit)}` : '$0';
   els.airRows.innerHTML = airRows.map((row) => `<div><span>${row.name} unitario</span><strong>${money(row.totals.landedPerUnit)}</strong></div>`).join('');
+  els.seaProductUnit.textContent = money(seaTotals.productPerUnit);
+  els.seaFreightUnit.textContent = money(seaTotals.freightPerUnit);
+  els.seaAdValoremUnit.textContent = money(seaTotals.adValoremPerUnit);
+  els.seaHandlingUnit.textContent = money(seaTotals.handlingPerUnit);
+  els.seaIvaUnit.textContent = money(seaTotals.ivaPerUnit);
+  els.seaBreakdownTotal.textContent = money(seaTotals.landedPerUnit);
   scheduleSaveWorkState();
 }
 
