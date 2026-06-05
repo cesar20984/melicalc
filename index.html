@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora Mercado Libre Chile</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #17202a;
+      --muted: #65717f;
+      --line: #d8dee6;
+      --accent: #00a650;
+      --accent-dark: #047a40;
+      --warn: #fff3cd;
+      --warn-line: #e6c76a;
+      --soft: #edf7f1;
+      --danger: #c5362f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 16px));
+      margin: 0 auto;
+      padding: 8px 0 24px;
+    }
+
+    header {
+      display: none;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    h1 {
+      font-size: clamp(1.65rem, 3vw, 2.45rem);
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 1.15rem;
+    }
+
+    h3 {
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 860px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(310px, 390px) 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 6px 18px rgba(20, 31, 44, 0.06);
+    }
+
+    .form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .calc-mode {
+      display: none;
+    }
+
+    .field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .inline-field {
+      display: grid;
+      grid-template-columns: auto minmax(120px, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .compact-field {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) minmax(120px, 1.1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .inline-check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 40px;
+      font-weight: 700;
+    }
+
+    .inline-check input {
+      width: 18px;
+      min-height: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    label {
+      font-weight: 700;
+    }
+
+    .compact-field label {
+      line-height: 1.15;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .tight-hint {
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+
+    .ali-input {
+      background: #fff8b8;
+      border-color: #d9b72f;
+      box-shadow: inset 0 0 0 1px rgba(217, 183, 47, 0.28);
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid #bfc8d2;
+      border-radius: 6px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 16px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid rgba(0, 166, 80, 0.24);
+      border-color: var(--accent);
+    }
+
+    button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+      color: var(--accent-dark);
+    }
+
+    .save-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .save-actions button:first-child {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .save-actions button:first-child:hover {
+      background: var(--accent-dark);
+      color: #ffffff;
+    }
+
+    .saved-section {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .saved-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .save-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .checks {
+      display: grid;
+      gap: 9px;
+      padding-top: 2px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      gap: 8px;
+      align-items: start;
+      color: var(--ink);
+    }
+
+    .check input {
+      width: 18px;
+      min-height: 18px;
+      height: 18px;
+      margin: 2px 0 0;
+      accent-color: var(--accent);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfd;
+      min-width: 0;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: clamp(1.15rem, 2.2vw, 1.7rem);
+      line-height: 1.05;
+      color: var(--accent-dark);
+      overflow-wrap: anywhere;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .section {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 0.93rem;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 9px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef1f5;
+      text-align: left;
+      color: #2d3742;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td.amount {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    td.formula {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .total-row td {
+      background: #f6faf8;
+      font-size: 1rem;
+    }
+
+    .total-row strong {
+      color: var(--accent-dark);
+    }
+
+    .callout {
+      border: 1px solid var(--warn-line);
+      background: var(--warn);
+      border-radius: 8px;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .ok {
+      border-color: #b8dfc7;
+      background: var(--soft);
+    }
+
+    .small {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .negative {
+      color: var(--danger);
+    }
+
+    .ad-table td:first-child,
+    .ad-table th:first-child {
+      width: 120px;
+    }
+
+    @media (max-width: 880px) {
+      .layout,
+      .grid-two,
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      .layout {
+        gap: 8px;
+      }
+
+      .result-panel {
+        display: contents;
+      }
+
+      .panel {
+        padding: 9px;
+      }
+
+      .form {
+        gap: 8px;
+      }
+
+      main {
+        width: min(100% - 8px, 680px);
+        padding-top: 4px;
+      }
+
+      .summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px;
+        order: -2;
+      }
+
+      .form {
+        order: -1;
+      }
+
+      .metric {
+        padding: 8px 6px;
+      }
+
+      .metric span {
+        font-size: 0.74rem;
+        line-height: 1.15;
+      }
+
+      .metric strong {
+        font-size: 1rem;
+      }
+
+      h2 {
+        font-size: 1rem;
+      }
+
+      h3 {
+        font-size: 0.92rem;
+      }
+
+      label {
+        font-size: 0.9rem;
+      }
+
+      .hint,
+      .small,
+      td.formula {
+        font-size: 0.78rem;
+      }
+
+      .hint {
+        display: none;
+      }
+
+      input,
+      select,
+      button {
+        min-height: 38px;
+        padding: 7px 9px;
+      }
+
+      .save-actions,
+      .saved-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .compact-field {
+        grid-template-columns: minmax(112px, 0.9fr) minmax(116px, 1.1fr);
+        gap: 8px;
+      }
+
+      table {
+        font-size: 0.82rem;
+      }
+
+      th,
+      td {
+        padding: 7px 6px;
+      }
+
+      td.amount {
+        white-space: normal;
+      }
+
+      .mobile-secondary {
+        display: grid;
+        margin-top: 0 !important;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Calculadora Mercado Libre Chile</h1>
+      <p class="subtitle">Calcula precio final, utilidad neta, IVA debito/credito y comisiones sin mezclar montos brutos con montos netos.</p>
+    </header>
+
+    <div class="layout">
+      <section class="panel form" aria-label="Datos de entrada">
+        <div class="field">
+          <label for="productGross">Producto AliExpress con IVA</label>
+          <input id="productGross" class="ali-input" type="number" min="0" step="1" inputmode="numeric" value="0">
+          <p class="hint">Ejemplo: 29.000 incluye IVA. Neto = 29.000 / 1,19.</p>
+        </div>
+
+        <div class="inline-field">
+          <label class="inline-check" for="includeShipping">
+            <input id="includeShipping" type="checkbox" checked>
+            <span>Envio</span>
+          </label>
+          <div class="field">
+            <input id="shippingGross" aria-label="Envio con IVA" type="number" min="0" step="1" inputmode="numeric" value="3500">
+          </div>
+        </div>
+
+        <div class="inline-field">
+          <label for="packagingCost">Empaque con IVA</label>
+          <div class="field">
+            <input id="packagingCost" type="number" min="0" step="1" inputmode="numeric" value="150">
+          </div>
+        </div>
+
+        <input id="marginMode" type="hidden" value="percent">
+
+        <div class="compact-field" id="percentField">
+          <label for="profitPercent">Porcentaje de ganancia</label>
+          <input id="profitPercent" type="number" min="0" step="0.01" inputmode="decimal" value="40">
+        </div>
+
+        <div class="compact-field" id="amountField">
+          <label for="profitAmount">Ganancia deseada</label>
+          <input id="profitAmount" type="number" min="0" step="1" inputmode="numeric" value="0">
+        </div>
+
+        <div class="compact-field" id="priceField">
+          <label for="manualFinalPrice">Precio final con IVA</label>
+          <input id="manualFinalPrice" type="number" min="0" step="1" inputmode="numeric" value="0">
+        </div>
+
+        <div class="field">
+          <label for="mlRate">Comision Mercado Libre</label>
+          <select id="mlRate">
+            <option value="19">Premium 19%</option>
+            <option value="15">Clasica 15%</option>
+          </select>
+        </div>
+
+        <div class="saved-section">
+          <div class="save-actions">
+            <button id="saveCurrent" type="button">Guardar</button>
+            <button id="saveAsNew" type="button">Guardar nuevo</button>
+          </div>
+          <div class="saved-toolbar">
+            <select id="savedCalculations" aria-label="Calculos guardados">
+              <option value="">Calculos guardados</option>
+            </select>
+            <button id="deleteSaved" type="button">Eliminar</button>
+          </div>
+          <div id="saveStatus" class="save-status"></div>
+        </div>
+      </section>
+
+      <section class="panel result-panel" aria-live="polite">
+        <div class="summary">
+          <div class="metric">
+            <span>Precio final con IVA</span>
+            <strong id="finalPriceText">$0</strong>
+          </div>
+          <div class="metric">
+            <span>Ganancia neta real</span>
+            <strong id="profitText">$0</strong>
+          </div>
+          <div class="metric">
+            <span>Margen sobre costo neto</span>
+            <strong id="marginText">0%</strong>
+          </div>
+        </div>
+
+        <div class="grid-two mobile-secondary">
+          <div class="section">
+            <h2>Cuenta principal</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody id="mainBreakdown"></tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>IVA</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody id="vatBreakdown"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section mobile-secondary" style="margin-top:16px;">
+          <h2>Como sale el precio</h2>
+          <div id="formulaBox" class="callout ok"></div>
+        </div>
+
+        <div class="grid-two mobile-secondary" style="margin-top:16px;">
+          <div class="section">
+            <h2>Publicidad</h2>
+            <div class="callout">
+              <h3>ACOS maximo: <span id="acosText">0%</span></h3>
+              <p class="small">Es el porcentaje del precio final que podrias gastar en publicidad antes de que la ganancia quede en cero.</p>
+            </div>
+            <table class="ad-table">
+              <thead>
+                <tr>
+                  <th>Publicidad</th>
+                  <th>Ganancia despues de publicidad</th>
+                </tr>
+              </thead>
+              <tbody id="adBreakdown"></tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <h2>Lectura rapida</h2>
+            <div id="notesBox" class="callout"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const IVA = 0.19;
+    const IVA_FACTOR = 1 + IVA;
+
+    const els = {
+      productGross: document.getElementById('productGross'),
+      includeShipping: document.getElementById('includeShipping'),
+      shippingGross: document.getElementById('shippingGross'),
+      packagingCost: document.getElementById('packagingCost'),
+      marginMode: document.getElementById('marginMode'),
+      percentField: document.getElementById('percentField'),
+      amountField: document.getElementById('amountField'),
+      priceField: document.getElementById('priceField'),
+      profitPercent: document.getElementById('profitPercent'),
+      profitAmount: document.getElementById('profitAmount'),
+      manualFinalPrice: document.getElementById('manualFinalPrice'),
+      mlRate: document.getElementById('mlRate'),
+      finalPriceText: document.getElementById('finalPriceText'),
+      profitText: document.getElementById('profitText'),
+      marginText: document.getElementById('marginText'),
+      mainBreakdown: document.getElementById('mainBreakdown'),
+      vatBreakdown: document.getElementById('vatBreakdown'),
+      formulaBox: document.getElementById('formulaBox'),
+      acosText: document.getElementById('acosText'),
+      adBreakdown: document.getElementById('adBreakdown'),
+      notesBox: document.getElementById('notesBox'),
+      saveCurrent: document.getElementById('saveCurrent'),
+      saveAsNew: document.getElementById('saveAsNew'),
+      savedCalculations: document.getElementById('savedCalculations'),
+      deleteSaved: document.getElementById('deleteSaved'),
+      saveStatus: document.getElementById('saveStatus')
+    };
+
+    const DB_NAME = 'ml-price-calculator-db';
+    const DB_VERSION = 1;
+    let db;
+    let currentSavedName = '';
+    let loadingFromDb = false;
+
+    function money(value) {
+      const safeValue = Number.isFinite(value) ? value : 0;
+      return '$' + Math.round(safeValue).toLocaleString('es-CL');
+    }
+
+    function pct(value) {
+      const safeValue = Number.isFinite(value) ? value : 0;
+      return safeValue.toLocaleString('es-CL', { maximumFractionDigits: 2, minimumFractionDigits: 2 }) + '%';
+    }
+
+    function num(el) {
+      return parseFloat(el.value) || 0;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function openDb() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = () => {
+          const database = request.result;
+          if (!database.objectStoreNames.contains('settings')) {
+            database.createObjectStore('settings', { keyPath: 'key' });
+          }
+          if (!database.objectStoreNames.contains('calculations')) {
+            database.createObjectStore('calculations', { keyPath: 'name' });
+          }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function dbStore(storeName, mode = 'readonly') {
+      return db.transaction(storeName, mode).objectStore(storeName);
+    }
+
+    function dbGet(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const request = dbStore(storeName).get(key);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function dbGetAll(storeName) {
+      return new Promise((resolve, reject) => {
+        const request = dbStore(storeName).getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function dbPut(storeName, value) {
+      return new Promise((resolve, reject) => {
+        const request = dbStore(storeName, 'readwrite').put(value);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function dbDelete(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const request = dbStore(storeName, 'readwrite').delete(key);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function setStatus(text) {
+      els.saveStatus.textContent = text;
+    }
+
+    function getCurrentCalculation() {
+      return {
+        productGross: els.productGross.value,
+        includeShipping: els.includeShipping.checked,
+        shippingGross: els.shippingGross.value,
+        packagingCost: els.packagingCost.value,
+        marginMode: els.marginMode.value,
+        profitPercent: els.profitPercent.value,
+        profitAmount: els.profitAmount.value,
+        manualFinalPrice: els.manualFinalPrice.value,
+        mlRate: els.mlRate.value
+      };
+    }
+
+    function applyCalculation(calc) {
+      loadingFromDb = true;
+      els.productGross.value = calc.productGross ?? '0';
+      els.includeShipping.checked = calc.includeShipping ?? true;
+      els.shippingGross.value = calc.shippingGross ?? '3500';
+      els.packagingCost.value = calc.packagingCost ?? '150';
+      els.marginMode.value = calc.marginMode ?? 'percent';
+      els.profitPercent.value = calc.profitPercent ?? '40';
+      els.profitAmount.value = calc.profitAmount ?? '0';
+      els.manualFinalPrice.value = calc.manualFinalPrice ?? '0';
+      els.mlRate.value = calc.mlRate ?? '19';
+      recalc();
+      loadingFromDb = false;
+    }
+
+    async function saveSettings() {
+      if (!db || loadingFromDb) return;
+      await dbPut('settings', {
+        key: 'defaults',
+        shippingGross: els.shippingGross.value,
+        packagingCost: els.packagingCost.value
+      });
+    }
+
+    async function loadSettings() {
+      const settings = await dbGet('settings', 'defaults');
+      if (!settings) return;
+      loadingFromDb = true;
+      els.shippingGross.value = settings.shippingGross ?? els.shippingGross.value;
+      els.packagingCost.value = settings.packagingCost ?? els.packagingCost.value;
+      recalc();
+      loadingFromDb = false;
+    }
+
+    async function renderSavedCalculations() {
+      const saved = await dbGetAll('calculations');
+      saved.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      const options = ['<option value="">Calculos guardados</option>'].concat(
+        saved.map((item) => '<option value="' + encodeURIComponent(item.name) + '">' + escapeHtml(item.name) + '</option>')
+      );
+      els.savedCalculations.innerHTML = options.join('');
+      if (currentSavedName) {
+        els.savedCalculations.value = encodeURIComponent(currentSavedName);
+      }
+    }
+
+    async function saveCalculation(name) {
+      const cleanName = name.trim();
+      if (!cleanName) return;
+      await dbPut('calculations', {
+        name: cleanName,
+        updatedAt: new Date().toISOString(),
+        data: getCurrentCalculation()
+      });
+      currentSavedName = cleanName;
+      await renderSavedCalculations();
+      setStatus('Guardado: ' + cleanName);
+    }
+
+    async function saveCurrentCalculation() {
+      const defaultName = currentSavedName || '';
+      const name = defaultName || prompt('Nombre del calculo:');
+      if (!name) return;
+      await saveCalculation(name);
+    }
+
+    async function saveAsNewCalculation() {
+      const name = prompt('Nombre del nuevo calculo:');
+      if (!name) return;
+      await saveCalculation(name);
+    }
+
+    async function loadSelectedCalculation() {
+      const selected = els.savedCalculations.value;
+      if (!selected) return;
+      const name = decodeURIComponent(selected);
+      const saved = await dbGet('calculations', name);
+      if (!saved) return;
+      currentSavedName = name;
+      applyCalculation(saved.data);
+      setStatus('Cargado: ' + name);
+    }
+
+    async function deleteSelectedCalculation() {
+      const selected = els.savedCalculations.value;
+      if (!selected) return;
+      const name = decodeURIComponent(selected);
+      if (!confirm('Eliminar "' + name + '"?')) return;
+      await dbDelete('calculations', name);
+      if (currentSavedName === name) currentSavedName = '';
+      await renderSavedCalculations();
+      setStatus('Eliminado: ' + name);
+    }
+
+    function row(label, amount, formula) {
+      return '<tr><td><strong>' + label + '</strong><div class="formula">' + formula + '</div></td><td class="amount">' + money(amount) + '</td></tr>';
+    }
+
+    function totalRow(label, amount, formula) {
+      return '<tr class="total-row"><td><strong>' + label + '</strong><div class="formula">' + formula + '</div></td><td class="amount"><strong>' + money(amount) + '</strong></td></tr>';
+    }
+
+    function getFixedFeeGross(finalGross) {
+      if (finalGross > 0 && finalGross <= 9990) return 700;
+      if (finalGross > 0 && finalGross <= 19990) return 1000;
+      return 0;
+    }
+
+    function fixedFeeRule(finalGross) {
+      if (finalGross <= 0) return 'sin precio final calculado';
+      if (finalGross <= 9990) return 'precio final <= $9.990, aplica $700 bruto';
+      if (finalGross <= 19990) return 'precio final <= $19.990, aplica $1.000 bruto';
+      return 'precio final > $19.990, aplica $0';
+    }
+
+    function setModeVisibility() {
+      els.percentField.style.display = 'grid';
+      els.amountField.style.display = 'grid';
+      els.priceField.style.display = 'grid';
+    }
+
+    function computeRecoveringVat(data) {
+      const productNet = data.productGross / IVA_FACTOR;
+      const shippingNet = data.includeShipping ? data.shippingGross / IVA_FACTOR : 0;
+      const packagingNet = data.packagingCost / IVA_FACTOR;
+      const costNet = productNet + shippingNet + packagingNet;
+
+      let finalNet;
+      let finalGross;
+      let fixedFeeGross;
+      let fixedFeeNet;
+      let targetProfit;
+
+      if (data.marginMode === 'price') {
+        finalGross = data.manualFinalPrice;
+        fixedFeeGross = getFixedFeeGross(finalGross);
+        fixedFeeNet = fixedFeeGross / IVA_FACTOR;
+        finalNet = finalGross / IVA_FACTOR;
+        targetProfit = finalNet - (finalNet * data.mlRate) - fixedFeeNet - costNet;
+      } else {
+        targetProfit = data.marginMode === 'amount' ? data.profitAmount : costNet * data.profitPercent;
+        finalGross = 0;
+        for (let i = 0; i < 8; i++) {
+          fixedFeeGross = getFixedFeeGross(finalGross);
+          fixedFeeNet = fixedFeeGross / IVA_FACTOR;
+          finalNet = (costNet + targetProfit + fixedFeeNet) / (1 - data.mlRate);
+          const nextGross = finalNet * IVA_FACTOR;
+          if (Math.abs(nextGross - finalGross) < 1) {
+            finalGross = nextGross;
+            break;
+          }
+          finalGross = nextGross;
+        }
+        fixedFeeGross = getFixedFeeGross(finalGross);
+        fixedFeeNet = fixedFeeGross / IVA_FACTOR;
+        finalNet = (costNet + targetProfit + fixedFeeNet) / (1 - data.mlRate);
+      }
+
+      finalGross = finalNet * IVA_FACTOR;
+      const commissionNet = finalNet * data.mlRate;
+      const commissionVat = commissionNet * IVA;
+      const saleVat = finalNet * IVA;
+      const productVatCredit = data.productGross - productNet;
+      const shippingVatCredit = data.includeShipping ? data.shippingGross - shippingNet : 0;
+      const packagingVatCredit = data.packagingCost - packagingNet;
+      const fixedFeeVatCredit = fixedFeeGross - fixedFeeNet;
+      const vatCredit = productVatCredit + shippingVatCredit + packagingVatCredit + commissionVat + fixedFeeVatCredit;
+      const vatToPay = saleVat - vatCredit;
+      const realProfit = finalNet - commissionNet - fixedFeeNet - costNet;
+
+      return {
+        productNet,
+        shippingNet,
+        packagingNet,
+        fixedFeeGross,
+        fixedFeeNet,
+        costNet,
+        targetProfit,
+        finalNet,
+        finalGross,
+        commissionNet,
+        commissionVat,
+        saleVat,
+        productVatCredit,
+        shippingVatCredit,
+        packagingVatCredit,
+        fixedFeeVatCredit,
+        vatCredit,
+        vatToPay,
+        realProfit
+      };
+    }
+
+    function renderRecoveringVat(data, r) {
+      els.mainBreakdown.innerHTML = [
+        row('Producto neto', r.productNet, money(data.productGross) + ' / 1,19'),
+        row('Envio neto', r.shippingNet, data.includeShipping ? money(data.shippingGross) + ' / 1,19' : 'envio no incluido'),
+        row('Empaque neto', r.packagingNet, money(data.packagingCost) + ' / 1,19'),
+        row('Costo neto total', r.costNet, 'producto neto + envio neto + empaque neto'),
+        row('Ganancia neta objetivo', r.targetProfit, data.marginMode === 'percent' ? money(r.costNet) + ' x ' + pct(data.profitPercent * 100) : 'monto ingresado o calculado desde el precio final'),
+        row('Comision ML neta', r.commissionNet, money(r.finalNet) + ' x ' + pct(data.mlRate * 100)),
+        row('Costo fijo ML neto', r.fixedFeeNet, money(r.fixedFeeGross) + ' / 1,19. ' + fixedFeeRule(r.finalGross)),
+        row('Precio neto de venta', r.finalNet, '(' + money(r.costNet) + ' + ' + money(r.targetProfit) + ' + ' + money(r.fixedFeeNet) + ') / (1 - ' + pct(data.mlRate * 100) + ')'),
+        row('Precio final con IVA', r.finalGross, money(r.finalNet) + ' x 1,19')
+      ].join('');
+
+      els.vatBreakdown.innerHTML = [
+        row('IVA debito de la venta', r.saleVat, money(r.finalGross) + ' - (' + money(r.finalGross) + ' / 1,19)'),
+        totalRow('Total IVA debito', r.saleVat, 'solo IVA de la venta'),
+        row('Credito IVA producto', r.productVatCredit, money(data.productGross) + ' - ' + money(r.productNet)),
+        row('Credito IVA envio', r.shippingVatCredit, data.includeShipping ? money(data.shippingGross) + ' - ' + money(r.shippingNet) : 'envio no incluido'),
+        row('Credito IVA empaque', r.packagingVatCredit, money(data.packagingCost) + ' - ' + money(r.packagingNet)),
+        row('Credito IVA comision ML', r.commissionVat, money(r.commissionNet) + ' x 19%'),
+        row('Credito IVA costo fijo ML', r.fixedFeeVatCredit, money(r.fixedFeeGross) + ' - ' + money(r.fixedFeeNet)),
+        totalRow('Total IVA credito', r.vatCredit, 'producto + envio + empaque + comision ML + costo fijo ML'),
+        totalRow('IVA estimado a pagar', r.vatToPay, 'total debito - total credito')
+      ].join('');
+
+      els.formulaBox.innerHTML =
+        '<p><strong>Formula base con IVA recuperable:</strong></p>' +
+        '<p>Precio neto = (costo neto total + ganancia neta deseada + costo fijo ML neto) / (1 - comision ML).</p>' +
+        '<p>Costo fijo ML aplicado: ' + fixedFeeRule(r.finalGross) + '.</p>' +
+        '<p>Precio final = precio neto x 1,19.</p>' +
+        '<p>Con tus numeros actuales: (' + money(r.costNet) + ' + ' + money(r.targetProfit) + ' + ' + money(r.fixedFeeNet) + ') / ' + pct((1 - data.mlRate) * 100) + ' = ' + money(r.finalNet) + ' neto. Luego ' + money(r.finalNet) + ' x 1,19 = ' + money(r.finalGross) + ' final.</p>';
+
+      els.notesBox.innerHTML =
+        '<p><strong>Modo fijo:</strong> esta calculadora asume que facturas y recuperas IVA.</p>' +
+        '<p>El IVA estimado a pagar sale de restar creditos: producto, envio, empaque, comision ML y costo fijo cuando corresponda.</p>';
+    }
+
+    function renderAds(finalGross, profit) {
+      const acos = finalGross > 0 ? (profit / finalGross) * 100 : 0;
+      els.acosText.textContent = pct(acos);
+      els.adBreakdown.innerHTML = '';
+
+      [5, 10, 15, 20, 25, 30, 35, 40].forEach((adPct) => {
+        const adCost = finalGross * (adPct / 100);
+        const afterAd = profit - adCost;
+        const klass = afterAd < 0 ? ' class="amount negative"' : ' class="amount"';
+        els.adBreakdown.innerHTML += '<tr><td>' + adPct + '%</td><td' + klass + '>' + money(afterAd) + '</td></tr>';
+      });
+    }
+
+    function recalc() {
+      setModeVisibility();
+
+      const data = {
+        productGross: num(els.productGross),
+        includeShipping: els.includeShipping.checked,
+        shippingGross: num(els.shippingGross),
+        packagingCost: num(els.packagingCost),
+        marginMode: els.marginMode.value,
+        profitPercent: num(els.profitPercent) / 100,
+        profitAmount: num(els.profitAmount),
+        manualFinalPrice: num(els.manualFinalPrice),
+        mlRate: num(els.mlRate) / 100
+      };
+
+      const r = computeRecoveringVat(data);
+      const margin = r.costNet > 0 ? (r.realProfit / r.costNet) * 100 : 0;
+      els.finalPriceText.textContent = money(r.finalGross);
+      els.profitText.textContent = money(r.realProfit);
+      els.marginText.textContent = pct(margin);
+      renderRecoveringVat(data, r);
+      renderAds(r.finalGross, r.realProfit);
+
+      if (data.marginMode !== 'amount') els.profitAmount.value = Math.round(r.realProfit);
+      if (data.marginMode !== 'percent') els.profitPercent.value = margin.toFixed(2);
+      if (data.marginMode !== 'price') els.manualFinalPrice.value = Math.round(r.finalGross);
+    }
+
+    [els.productGross, els.includeShipping, els.shippingGross, els.packagingCost, els.mlRate].forEach((el) => {
+      el.addEventListener('input', recalc);
+      el.addEventListener('change', recalc);
+    });
+
+    [els.shippingGross, els.packagingCost].forEach((el) => {
+      el.addEventListener('change', () => {
+        saveSettings().catch(() => setStatus('No se pudieron guardar envio/empaque.'));
+      });
+    });
+
+    els.profitPercent.addEventListener('input', () => {
+      els.marginMode.value = 'percent';
+      recalc();
+    });
+
+    els.profitAmount.addEventListener('input', () => {
+      els.marginMode.value = 'amount';
+      recalc();
+    });
+
+    els.manualFinalPrice.addEventListener('input', () => {
+      els.marginMode.value = 'price';
+      recalc();
+    });
+
+    els.saveCurrent.addEventListener('click', () => {
+      saveCurrentCalculation().catch(() => setStatus('No se pudo guardar.'));
+    });
+
+    els.saveAsNew.addEventListener('click', () => {
+      saveAsNewCalculation().catch(() => setStatus('No se pudo guardar.'));
+    });
+
+    els.savedCalculations.addEventListener('change', () => {
+      loadSelectedCalculation().catch(() => setStatus('No se pudo cargar.'));
+    });
+
+    els.deleteSaved.addEventListener('click', () => {
+      deleteSelectedCalculation().catch(() => setStatus('No se pudo eliminar.'));
+    });
+
+    async function init() {
+      recalc();
+      try {
+        db = await openDb();
+        await loadSettings();
+        await renderSavedCalculations();
+      } catch (error) {
+        setStatus('Base de datos local no disponible.');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
