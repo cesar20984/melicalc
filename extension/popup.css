@@ -47,6 +47,11 @@ h2 {
   justify-content: space-between;
 }
 
+.top-actions {
+  display: flex;
+  gap: 6px;
+}
+
 #siteBadge {
   color: var(--accent);
 }

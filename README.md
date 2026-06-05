@@ -93,6 +93,7 @@ El addon puede:
 
 - Detectar si la pestana actual es Alibaba o AliExpress.
 - Extraer precio, dimensiones y peso con OpenAI usando salida JSON estructurada.
+- Mantener la cuenta en curso aunque se cierre el popup del addon.
 - Calcular unidades por metro cubico, envio por barco y envio por avion.
 - Abrir `https://melicalc-xi.vercel.app/` con los datos precargados.
 

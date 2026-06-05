@@ -3,6 +3,7 @@ const MELICALC_BASE = 'https://melicalc-xi.vercel.app/';
 const els = {
   siteBadge: document.getElementById('siteBadge'),
   extractBtn: document.getElementById('extractBtn'),
+  clearWorkBtn: document.getElementById('clearWorkBtn'),
   openaiApiKey: document.getElementById('openaiApiKey'),
   openaiModel: document.getElementById('openaiModel'),
   seaM3Price: document.getElementById('seaM3Price'),
@@ -39,6 +40,8 @@ let lastTotals = {
   seaUnitExtra: 0,
   airBestUnitExtra: 0
 };
+let restoringState = false;
+let saveWorkTimer;
 
 function num(el, fallback = 0) {
   const value = Number(el.value);
@@ -52,6 +55,79 @@ function money(value) {
 
 function setStatus(text) {
   els.status.textContent = text;
+}
+
+function getWorkState() {
+  return {
+    currentSiteType,
+    lastTotals,
+    llmNotes: els.llmNotes.textContent,
+    productPrice: els.productPrice.value,
+    currency: els.currency.value,
+    quantity: els.quantity.value,
+    weightKg: els.weightKg.value,
+    lengthCm: els.lengthCm.value,
+    widthCm: els.widthCm.value,
+    heightCm: els.heightCm.value
+  };
+}
+
+async function saveWorkStateNow() {
+  if (restoringState) return;
+  await chrome.storage.local.set({ workState: getWorkState() });
+}
+
+function scheduleSaveWorkState() {
+  if (restoringState) return;
+  clearTimeout(saveWorkTimer);
+  saveWorkTimer = setTimeout(() => {
+    saveWorkStateNow().catch(() => {});
+  }, 250);
+}
+
+function applyWorkState(state) {
+  if (!state) return false;
+  restoringState = true;
+  currentSiteType = state.currentSiteType || currentSiteType;
+  lastTotals = state.lastTotals || lastTotals;
+  els.siteBadge.textContent = currentSiteType.toUpperCase();
+  els.llmNotes.textContent = state.llmNotes || '';
+  els.productPrice.value = state.productPrice ?? els.productPrice.value;
+  els.currency.value = state.currency ?? els.currency.value;
+  els.quantity.value = state.quantity ?? els.quantity.value;
+  els.weightKg.value = state.weightKg ?? els.weightKg.value;
+  els.lengthCm.value = state.lengthCm ?? els.lengthCm.value;
+  els.widthCm.value = state.widthCm ?? els.widthCm.value;
+  els.heightCm.value = state.heightCm ?? els.heightCm.value;
+  updateModeForSite();
+  recalc();
+  restoringState = false;
+  return true;
+}
+
+async function loadWorkState() {
+  const { workState } = await chrome.storage.local.get('workState');
+  return applyWorkState(workState);
+}
+
+async function clearWorkState() {
+  await chrome.storage.local.remove('workState');
+  restoringState = true;
+  currentSiteType = 'manual';
+  lastTotals = { seaUnitExtra: 0, airBestUnitExtra: 0 };
+  els.siteBadge.textContent = 'MANUAL';
+  els.llmNotes.textContent = '';
+  els.productPrice.value = '';
+  els.currency.value = 'USD';
+  els.quantity.value = '1';
+  els.weightKg.value = '';
+  els.lengthCm.value = '';
+  els.widthCm.value = '';
+  els.heightCm.value = '';
+  updateModeForSite();
+  recalc();
+  restoringState = false;
+  setStatus('Cuenta limpia.');
 }
 
 function detectSiteFromUrl(url) {
@@ -215,6 +291,7 @@ function applyExtraction(extracted) {
   els.llmNotes.textContent = extracted.notes ? `LLM: ${extracted.notes}` : '';
   updateModeForSite();
   recalc();
+  saveWorkStateNow().catch(() => {});
 }
 
 function productPriceClp() {
@@ -273,6 +350,7 @@ function recalc() {
   els.seaTotal.textContent = money(seaTotals.total);
   els.airBest.textContent = bestAir ? `${bestAir.name} ${money(bestAir.totals.total)}` : '$0';
   els.airRows.innerHTML = airRows.map((row) => `<div><span>${row.name}</span><strong>${money(row.totals.total)}</strong></div>`).join('');
+  scheduleSaveWorkState();
 }
 
 function updateModeForSite() {
@@ -282,7 +360,8 @@ function updateModeForSite() {
   els.calcAirBtn.classList.toggle('hidden', isAliExpress);
 }
 
-function openCalculator(shippingGross, includeShipping) {
+async function openCalculator(shippingGross, includeShipping) {
+  await saveWorkStateNow();
   const params = new URLSearchParams({
     productGross: Math.round(productPriceClp()).toString(),
     includeShipping: includeShipping ? 'true' : 'false',
@@ -291,7 +370,7 @@ function openCalculator(shippingGross, includeShipping) {
     profitPercent: '40',
     mlRate: '19'
   });
-  chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
+  await chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
 }
 
 async function extractCurrent() {
@@ -302,6 +381,7 @@ async function extractCurrent() {
   setStatus('Consultando OpenAI...');
   const extracted = await extractWithOpenAI(page);
   applyExtraction(extracted);
+  await saveWorkStateNow();
   setStatus('Datos extraidos.');
 }
 
@@ -309,14 +389,21 @@ async function init() {
   await loadSettings();
   await refreshDollarRate().catch(() => setStatus('Usando dolar guardado/manual.'));
   const tab = await activeTab();
-  currentSiteType = detectSiteFromUrl(tab.url);
-  els.siteBadge.textContent = currentSiteType.toUpperCase();
-  updateModeForSite();
-  recalc();
+  const restored = await loadWorkState();
+  if (!restored) {
+    currentSiteType = detectSiteFromUrl(tab.url);
+    els.siteBadge.textContent = currentSiteType.toUpperCase();
+    updateModeForSite();
+    recalc();
+  }
 }
 
 els.extractBtn.addEventListener('click', () => {
   extractCurrent().catch((error) => setStatus(error.message));
+});
+
+els.clearWorkBtn.addEventListener('click', () => {
+  clearWorkState().catch((error) => setStatus(error.message));
 });
 
 els.saveSettingsBtn.addEventListener('click', () => {
@@ -344,9 +431,14 @@ els.refreshDollarBtn.addEventListener('click', () => {
   els.fedexRateKg
 ].forEach((el) => el.addEventListener('input', recalc));
 
-els.calcSeaBtn.addEventListener('click', () => openCalculator(lastTotals.seaUnitExtra, true));
-els.calcAirBtn.addEventListener('click', () => openCalculator(lastTotals.airBestUnitExtra, true));
-els.calcNoShipBtn.addEventListener('click', () => {
+els.calcSeaBtn.addEventListener('click', () => {
+  openCalculator(lastTotals.seaUnitExtra, true).catch((error) => setStatus(error.message));
+});
+els.calcAirBtn.addEventListener('click', () => {
+  openCalculator(lastTotals.airBestUnitExtra, true).catch((error) => setStatus(error.message));
+});
+els.calcNoShipBtn.addEventListener('click', async () => {
+  await saveWorkStateNow();
   const aliExpressGross = currentSiteType === 'aliexpress' ? productPriceClp() * 1.19 : productPriceClp();
   const params = new URLSearchParams({
     productGross: Math.round(aliExpressGross).toString(),
@@ -356,7 +448,7 @@ els.calcNoShipBtn.addEventListener('click', () => {
     profitPercent: '40',
     mlRate: '19'
   });
-  chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
+  await chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
 });
 
 init().catch((error) => setStatus(error.message));
