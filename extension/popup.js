@@ -44,6 +44,7 @@ const els = {
 
 let currentSiteType = 'other';
 let currentProductTitle = '';
+let currentProductUrl = '';
 let lastTotals = {
   seaUnitLanded: 0,
   airBestUnitLanded: 0
@@ -69,6 +70,7 @@ function getWorkState() {
   return {
     currentSiteType,
     currentProductTitle,
+    currentProductUrl,
     lastTotals,
     llmNotes: els.llmNotes.textContent,
     productPrice: els.productPrice.value,
@@ -99,6 +101,7 @@ function applyWorkState(state) {
   restoringState = true;
   currentSiteType = state.currentSiteType || currentSiteType;
   currentProductTitle = state.currentProductTitle || currentProductTitle;
+  currentProductUrl = state.currentProductUrl || currentProductUrl;
   lastTotals = state.lastTotals || lastTotals;
   els.siteBadge.textContent = currentSiteType.toUpperCase();
   els.llmNotes.textContent = state.llmNotes || '';
@@ -125,6 +128,7 @@ async function clearWorkState() {
   restoringState = true;
   currentSiteType = 'manual';
   currentProductTitle = '';
+  currentProductUrl = '';
   lastTotals = { seaUnitLanded: 0, airBestUnitLanded: 0 };
   els.siteBadge.textContent = 'MANUAL';
   els.llmNotes.textContent = '';
@@ -417,6 +421,9 @@ async function openCalculator(unitLandedGross) {
   if (currentProductTitle) {
     params.set('name', currentProductTitle.slice(0, 120));
   }
+  if (currentProductUrl) {
+    params.set('productUrl', currentProductUrl);
+  }
   await chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
 }
 
@@ -424,6 +431,7 @@ async function extractCurrent() {
   setStatus('Leyendo pagina...');
   const page = await scrapeCurrentPage();
   currentSiteType = page.siteType || currentSiteType;
+  currentProductUrl = page.url || '';
   els.siteBadge.textContent = currentSiteType.toUpperCase();
   setStatus('Consultando OpenAI...');
   const extracted = await extractWithOpenAI(page);

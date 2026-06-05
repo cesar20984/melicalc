@@ -220,6 +220,21 @@
       gap: 8px;
     }
 
+    .product-link-row {
+      min-height: 20px;
+    }
+
+    .product-link-row a {
+      color: var(--accent-dark);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .product-link-row a:hover {
+      text-decoration: underline;
+    }
+
     .saved-toolbar {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -501,6 +516,7 @@
         <div class="field">
           <label for="productGross">Producto AliExpress con IVA</label>
           <input id="productGross" class="ali-input" type="number" min="0" step="1" inputmode="numeric" value="0">
+          <div id="productLinkRow" class="product-link-row"></div>
           <p class="hint">Ejemplo: 29.000 incluye IVA. Neto = 29.000 / 1,19.</p>
         </div>
 
@@ -643,6 +659,7 @@
 
     const els = {
       productGross: document.getElementById('productGross'),
+      productLinkRow: document.getElementById('productLinkRow'),
       includeShipping: document.getElementById('includeShipping'),
       shippingGross: document.getElementById('shippingGross'),
       packagingCost: document.getElementById('packagingCost'),
@@ -676,6 +693,7 @@
     let useLocalStorageOnly = location.protocol === 'file:';
     let currentSavedName = '';
     let suggestedSavedName = '';
+    let currentProductUrl = '';
     let loadingFromDb = false;
 
     function money(value) {
@@ -699,6 +717,15 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function renderProductLink() {
+      if (!currentProductUrl) {
+        els.productLinkRow.innerHTML = '';
+        return;
+      }
+
+      els.productLinkRow.innerHTML = '<a href="' + escapeHtml(currentProductUrl) + '" target="_blank" rel="noopener noreferrer">Ver producto</a>';
     }
 
     async function apiJson(url, options = {}) {
@@ -779,6 +806,7 @@
     function getCurrentCalculation() {
       return {
         productGross: els.productGross.value,
+        productUrl: currentProductUrl,
         includeShipping: els.includeShipping.checked,
         shippingGross: els.shippingGross.value,
         packagingCost: els.packagingCost.value,
@@ -793,6 +821,8 @@
     function applyCalculation(calc) {
       loadingFromDb = true;
       els.productGross.value = calc.productGross ?? '0';
+      currentProductUrl = calc.productUrl ?? '';
+      renderProductLink();
       els.includeShipping.checked = calc.includeShipping ?? true;
       els.shippingGross.value = calc.shippingGross ?? '3500';
       els.packagingCost.value = calc.packagingCost ?? '150';
@@ -830,6 +860,10 @@
       if (params.has('name')) {
         suggestedSavedName = params.get('name').trim();
         setStatus('Nombre sugerido: ' + suggestedSavedName);
+      }
+      if (params.has('productUrl')) {
+        currentProductUrl = params.get('productUrl').trim();
+        renderProductLink();
       }
       recalc();
       loadingFromDb = false;
