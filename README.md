@@ -103,10 +103,22 @@ Configura dentro del popup:
 - OpenAI API key.
 - Modelo OpenAI. El valor inicial es `gpt-5.2`; si tu cuenta tiene otro modelo, cambialo ahi.
 - Precio del m3 por barco en USD.
-- Manejo de llegada en USD.
+- Manejo UPS en USD calculado automaticamente por tramo FOB declarado.
 - Tarifas por kg en USD para DHL/UPS/FedEx.
 - Ad valorem.
 - Dolar observado USD a CLP, obtenido desde `https://mindicador.cl/api/dolar` y editable manualmente si la API falla.
+
+Tabla de manejo UPS usada:
+
+- US$0 a 30: US$0
+- US$30,01 a 50: US$11,75 + IVA
+- US$50,01 a 70: US$21,50 + IVA
+- US$70,01 a 100: US$29,25 + IVA
+- US$100,01 a 200: US$36,50 + IVA
+- US$200,01 a 400: US$54,45 + IVA
+- US$400,01 a 700: US$72,45 + IVA
+- US$700,01 a 1.000: US$81,45 + IVA
+- US$1.000,01 a 3.000: US$168,35 + IVA
 
 Nota: DHL/UPS/FedEx quedan como tarifas configurables por kg. Para consultar APIs oficiales reales de cada courier faltan sus credenciales y contratos de API.
 

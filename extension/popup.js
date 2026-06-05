@@ -155,7 +155,6 @@ async function saveSettings() {
     openaiModel: els.openaiModel.value || 'gpt-5.2',
     seaM3Price: els.seaM3Price.value,
     adValoremPercent: els.adValoremPercent.value,
-    handlingFee: els.handlingFee.value,
     dhlRateKg: els.dhlRateKg.value,
     upsRateKg: els.upsRateKg.value,
     fedexRateKg: els.fedexRateKg.value,
@@ -171,7 +170,6 @@ async function loadSettings() {
   els.openaiModel.value = settings.openaiModel || 'gpt-5.2';
   els.seaM3Price.value = settings.seaM3Price || '0';
   els.adValoremPercent.value = settings.adValoremPercent || '6';
-  els.handlingFee.value = settings.handlingFee || '0';
   els.dhlRateKg.value = settings.dhlRateKg || '0';
   els.upsRateKg.value = settings.upsRateKg || '0';
   els.fedexRateKg.value = settings.fedexRateKg || '0';
@@ -309,15 +307,37 @@ function productPriceClp() {
   return price * num(els.usdToClp, 950);
 }
 
+function productPriceUsd() {
+  const price = num(els.productPrice);
+  const currency = els.currency.value.trim().toUpperCase();
+  if (currency === 'CLP') return price / num(els.usdToClp, 950);
+  return price;
+}
+
 function usdToClp(valueUsd) {
   return valueUsd * num(els.usdToClp, 950);
+}
+
+function upsHandlingFeeUsd(fobUsd) {
+  if (fobUsd <= 30) return 0;
+  if (fobUsd <= 50) return 11.75;
+  if (fobUsd <= 70) return 21.5;
+  if (fobUsd <= 100) return 29.25;
+  if (fobUsd <= 200) return 36.5;
+  if (fobUsd <= 400) return 54.45;
+  if (fobUsd <= 700) return 72.45;
+  if (fobUsd <= 1000) return 81.45;
+  if (fobUsd <= 3000) return 168.35;
+  return 168.35;
 }
 
 function importTotals(extraFreightClp) {
   const qty = Math.max(1, num(els.quantity, 1));
   const product = productPriceClp() * num(els.quantity, 1);
+  const fobUsd = productPriceUsd() * qty;
+  const handlingUsd = upsHandlingFeeUsd(fobUsd);
   const adValorem = (product + extraFreightClp) * (num(els.adValoremPercent, 6) / 100);
-  const handling = usdToClp(num(els.handlingFee));
+  const handling = usdToClp(handlingUsd);
   const subtotal = product + extraFreightClp + adValorem + handling;
   const iva = subtotal * 0.19;
   const total = subtotal + iva;
@@ -331,6 +351,7 @@ function importTotals(extraFreightClp) {
     freightPerUnit: extraFreightClp / qty,
     adValoremPerUnit: adValorem / qty,
     handlingPerUnit: handling / qty,
+    handlingUsd,
     ivaPerUnit: iva / qty
   };
 }
@@ -353,6 +374,7 @@ function recalc() {
   const activeAir = airRows.filter((row) => row.freight > 0);
   const bestAir = activeAir.length ? activeAir.reduce((best, row) => row.totals.total < best.totals.total ? row : best) : null;
   const seaTotals = importTotals(seaFreight);
+  els.handlingFee.value = seaTotals.handlingUsd.toFixed(2);
 
   lastTotals = {
     seaUnitLanded: seaTotals.landedPerUnit,
@@ -447,7 +469,6 @@ els.refreshDollarBtn.addEventListener('click', () => {
   els.heightCm,
   els.seaM3Price,
   els.adValoremPercent,
-  els.handlingFee,
   els.dhlRateKg,
   els.upsRateKg,
   els.fedexRateKg
