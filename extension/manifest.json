@@ -16,7 +16,8 @@
     "https://*.alibaba.com/*",
     "https://*.aliexpress.com/*",
     "https://api.openai.com/*",
-    "https://melicalc-xi.vercel.app/*"
+    "https://melicalc-xi.vercel.app/*",
+    "https://mindicador.cl/*"
   ],
   "content_scripts": [
     {

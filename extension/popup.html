@@ -23,24 +23,24 @@
           <input id="openaiModel" type="text" value="gpt-5.2">
         </label>
         <div class="grid">
-          <label>M3 barco CLP
+          <label>M3 barco USD
             <input id="seaM3Price" type="number" value="0">
           </label>
           <label>Ad valorem %
             <input id="adValoremPercent" type="number" value="6" step="0.01">
           </label>
         </div>
-        <label>Manejo llegada CLP
+        <label>Manejo llegada USD
           <input id="handlingFee" type="number" value="0">
         </label>
         <div class="grid">
-          <label>DHL CLP/kg
+          <label>DHL USD/kg
             <input id="dhlRateKg" type="number" value="0">
           </label>
-          <label>UPS CLP/kg
+          <label>UPS USD/kg
             <input id="upsRateKg" type="number" value="0">
           </label>
-          <label>FedEx CLP/kg
+          <label>FedEx USD/kg
             <input id="fedexRateKg" type="number" value="0">
           </label>
         </div>
@@ -61,6 +61,7 @@
           <input id="usdToClp" type="number" value="950">
         </label>
       </div>
+      <button id="refreshDollarBtn" class="secondary" type="button">Actualizar dolar</button>
       <div class="grid">
         <label>Cantidad
           <input id="quantity" type="number" value="1" min="1" step="1">

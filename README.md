@@ -100,7 +100,10 @@ Configura dentro del popup:
 
 - OpenAI API key.
 - Modelo OpenAI. El valor inicial es `gpt-5.2`; si tu cuenta tiene otro modelo, cambialo ahi.
-- Precio del m3 por barco.
-- Ad valorem, manejo y tarifas por kg para DHL/UPS/FedEx.
+- Precio del m3 por barco en USD.
+- Manejo de llegada en USD.
+- Tarifas por kg en USD para DHL/UPS/FedEx.
+- Ad valorem.
+- Dolar observado USD a CLP, obtenido desde `https://mindicador.cl/api/dolar` y editable manualmente si la API falla.
 
 Nota: DHL/UPS/FedEx quedan como tarifas configurables por kg. Para consultar APIs oficiales reales de cada courier faltan sus credenciales y contratos de API.

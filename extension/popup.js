@@ -15,6 +15,7 @@ const els = {
   productPrice: document.getElementById('productPrice'),
   currency: document.getElementById('currency'),
   usdToClp: document.getElementById('usdToClp'),
+  refreshDollarBtn: document.getElementById('refreshDollarBtn'),
   quantity: document.getElementById('quantity'),
   weightKg: document.getElementById('weightKg'),
   lengthCm: document.getElementById('lengthCm'),
@@ -92,6 +93,20 @@ async function loadSettings() {
   els.upsRateKg.value = settings.upsRateKg || '0';
   els.fedexRateKg.value = settings.fedexRateKg || '0';
   els.usdToClp.value = settings.usdToClp || '950';
+}
+
+async function refreshDollarRate() {
+  setStatus('Actualizando dolar...');
+  const response = await fetch('https://mindicador.cl/api/dolar');
+  const data = await response.json();
+  const value = Number(data?.serie?.[0]?.valor);
+  if (!Number.isFinite(value)) {
+    throw new Error('No se pudo obtener el dolar.');
+  }
+  els.usdToClp.value = value.toFixed(2);
+  await saveSettings();
+  recalc();
+  setStatus('Dolar actualizado: ' + value.toLocaleString('es-CL'));
 }
 
 async function scrapeCurrentPage() {
@@ -210,11 +225,15 @@ function productPriceClp() {
   return price * num(els.usdToClp, 950);
 }
 
+function usdToClp(valueUsd) {
+  return valueUsd * num(els.usdToClp, 950);
+}
+
 function importTotals(extraFreightClp) {
   const qty = Math.max(1, num(els.quantity, 1));
   const product = productPriceClp() * num(els.quantity, 1);
   const adValorem = (product + extraFreightClp) * (num(els.adValoremPercent, 6) / 100);
-  const handling = num(els.handlingFee);
+  const handling = usdToClp(num(els.handlingFee));
   const subtotal = product + extraFreightClp + adValorem + handling;
   const iva = subtotal * 0.19;
   const total = subtotal + iva;
@@ -233,11 +252,11 @@ function recalc() {
   const totalCbm = cbmUnit * qty;
   const totalKg = num(els.weightKg) * qty;
 
-  const seaFreight = totalCbm * num(els.seaM3Price);
+  const seaFreight = usdToClp(totalCbm * num(els.seaM3Price));
   const airRows = [
-    { name: 'DHL', freight: totalKg * num(els.dhlRateKg) },
-    { name: 'UPS', freight: totalKg * num(els.upsRateKg) },
-    { name: 'FedEx', freight: totalKg * num(els.fedexRateKg) }
+    { name: 'DHL', freight: usdToClp(totalKg * num(els.dhlRateKg)) },
+    { name: 'UPS', freight: usdToClp(totalKg * num(els.upsRateKg)) },
+    { name: 'FedEx', freight: usdToClp(totalKg * num(els.fedexRateKg)) }
   ].map((row) => ({ ...row, totals: importTotals(row.freight) }));
 
   const activeAir = airRows.filter((row) => row.freight > 0);
@@ -288,6 +307,7 @@ async function extractCurrent() {
 
 async function init() {
   await loadSettings();
+  await refreshDollarRate().catch(() => setStatus('Usando dolar guardado/manual.'));
   const tab = await activeTab();
   currentSiteType = detectSiteFromUrl(tab.url);
   els.siteBadge.textContent = currentSiteType.toUpperCase();
@@ -301,6 +321,10 @@ els.extractBtn.addEventListener('click', () => {
 
 els.saveSettingsBtn.addEventListener('click', () => {
   saveSettings().catch((error) => setStatus(error.message));
+});
+
+els.refreshDollarBtn.addEventListener('click', () => {
+  refreshDollarRate().catch((error) => setStatus(error.message));
 });
 
 [
