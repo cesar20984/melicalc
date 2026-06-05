@@ -25,20 +25,21 @@ const els = {
   shippingPanel: document.getElementById('shippingPanel'),
   unitCbm: document.getElementById('unitCbm'),
   unitsPerM3: document.getElementById('unitsPerM3'),
+  seaM3Clp: document.getElementById('seaM3Clp'),
   seaTotal: document.getElementById('seaTotal'),
+  seaUnit: document.getElementById('seaUnit'),
   airBest: document.getElementById('airBest'),
   airRows: document.getElementById('airRows'),
   calcSeaBtn: document.getElementById('calcSeaBtn'),
   calcAirBtn: document.getElementById('calcAirBtn'),
-  calcNoShipBtn: document.getElementById('calcNoShipBtn'),
   status: document.getElementById('status'),
   llmNotes: document.getElementById('llmNotes')
 };
 
 let currentSiteType = 'other';
 let lastTotals = {
-  seaUnitExtra: 0,
-  airBestUnitExtra: 0
+  seaUnitLanded: 0,
+  airBestUnitLanded: 0
 };
 let restoringState = false;
 let saveWorkTimer;
@@ -114,7 +115,7 @@ async function clearWorkState() {
   await chrome.storage.local.remove('workState');
   restoringState = true;
   currentSiteType = 'manual';
-  lastTotals = { seaUnitExtra: 0, airBestUnitExtra: 0 };
+  lastTotals = { seaUnitLanded: 0, airBestUnitLanded: 0 };
   els.siteBadge.textContent = 'MANUAL';
   els.llmNotes.textContent = '';
   els.productPrice.value = '';
@@ -318,7 +319,8 @@ function importTotals(extraFreightClp) {
   return {
     total,
     extra,
-    extraPerUnit: extra / qty
+    extraPerUnit: extra / qty,
+    landedPerUnit: total / qty
   };
 }
 
@@ -330,6 +332,7 @@ function recalc() {
   const totalKg = num(els.weightKg) * qty;
 
   const seaFreight = usdToClp(totalCbm * num(els.seaM3Price));
+  const seaM3Clp = usdToClp(num(els.seaM3Price));
   const airRows = [
     { name: 'DHL', freight: usdToClp(totalKg * num(els.dhlRateKg)) },
     { name: 'UPS', freight: usdToClp(totalKg * num(els.upsRateKg)) },
@@ -341,15 +344,17 @@ function recalc() {
   const seaTotals = importTotals(seaFreight);
 
   lastTotals = {
-    seaUnitExtra: seaTotals.extraPerUnit,
-    airBestUnitExtra: bestAir?.totals.extraPerUnit || 0
+    seaUnitLanded: seaTotals.landedPerUnit,
+    airBestUnitLanded: bestAir?.totals.landedPerUnit || 0
   };
 
   els.unitCbm.textContent = cbmUnit ? cbmUnit.toFixed(4) : '0';
   els.unitsPerM3.textContent = unitsM3 ? String(unitsM3) : '0';
+  els.seaM3Clp.textContent = money(seaM3Clp);
   els.seaTotal.textContent = money(seaTotals.total);
-  els.airBest.textContent = bestAir ? `${bestAir.name} ${money(bestAir.totals.total)}` : '$0';
-  els.airRows.innerHTML = airRows.map((row) => `<div><span>${row.name}</span><strong>${money(row.totals.total)}</strong></div>`).join('');
+  els.seaUnit.textContent = money(seaTotals.landedPerUnit);
+  els.airBest.textContent = bestAir ? `${bestAir.name} ${money(bestAir.totals.landedPerUnit)}` : '$0';
+  els.airRows.innerHTML = airRows.map((row) => `<div><span>${row.name} unitario</span><strong>${money(row.totals.landedPerUnit)}</strong></div>`).join('');
   scheduleSaveWorkState();
 }
 
@@ -357,15 +362,15 @@ function updateModeForSite() {
   const isAliExpress = currentSiteType === 'aliexpress';
   els.shippingPanel.classList.toggle('hidden', isAliExpress);
   els.calcSeaBtn.classList.toggle('hidden', isAliExpress);
-  els.calcAirBtn.classList.toggle('hidden', isAliExpress);
+  els.calcAirBtn.textContent = isAliExpress ? 'Abrir calculadora' : 'Abrir avion';
 }
 
-async function openCalculator(shippingGross, includeShipping) {
+async function openCalculator(unitLandedGross) {
   await saveWorkStateNow();
   const params = new URLSearchParams({
-    productGross: Math.round(productPriceClp()).toString(),
-    includeShipping: includeShipping ? 'true' : 'false',
-    shippingGross: Math.round(shippingGross).toString(),
+    productGross: Math.round(unitLandedGross).toString(),
+    includeShipping: 'false',
+    shippingGross: '0',
     packagingCost: '150',
     profitPercent: '40',
     mlRate: '19'
@@ -432,23 +437,11 @@ els.refreshDollarBtn.addEventListener('click', () => {
 ].forEach((el) => el.addEventListener('input', recalc));
 
 els.calcSeaBtn.addEventListener('click', () => {
-  openCalculator(lastTotals.seaUnitExtra, true).catch((error) => setStatus(error.message));
+  openCalculator(lastTotals.seaUnitLanded).catch((error) => setStatus(error.message));
 });
 els.calcAirBtn.addEventListener('click', () => {
-  openCalculator(lastTotals.airBestUnitExtra, true).catch((error) => setStatus(error.message));
-});
-els.calcNoShipBtn.addEventListener('click', async () => {
-  await saveWorkStateNow();
-  const aliExpressGross = currentSiteType === 'aliexpress' ? productPriceClp() * 1.19 : productPriceClp();
-  const params = new URLSearchParams({
-    productGross: Math.round(aliExpressGross).toString(),
-    includeShipping: 'false',
-    shippingGross: '0',
-    packagingCost: '150',
-    profitPercent: '40',
-    mlRate: '19'
-  });
-  await chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
+  const unit = currentSiteType === 'aliexpress' ? productPriceClp() * 1.19 : lastTotals.airBestUnitLanded;
+  openCalculator(unit).catch((error) => setStatus(error.message));
 });
 
 init().catch((error) => setStatus(error.message));

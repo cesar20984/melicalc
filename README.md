@@ -95,7 +95,8 @@ El addon puede:
 - Extraer precio, dimensiones y peso con OpenAI usando salida JSON estructurada.
 - Mantener la cuenta en curso aunque se cierre el popup del addon.
 - Calcular unidades por metro cubico, envio por barco y envio por avion.
-- Abrir `https://melicalc-xi.vercel.app/` con los datos precargados.
+- Mostrar costo unitario puesto en Chile por barco y por avion.
+- Abrir `https://melicalc-xi.vercel.app/` con el costo unitario puesto en Chile como precio del producto, sin tocar el envio de MeliCalc.
 
 Configura dentro del popup:
 
@@ -108,3 +109,8 @@ Configura dentro del popup:
 - Dolar observado USD a CLP, obtenido desde `https://mindicador.cl/api/dolar` y editable manualmente si la API falla.
 
 Nota: DHL/UPS/FedEx quedan como tarifas configurables por kg. Para consultar APIs oficiales reales de cada courier faltan sus credenciales y contratos de API.
+
+Flujo actual:
+
+- Alibaba: calcula costo unitario puesto en Chile por barco o avion y abre MeliCalc con ese valor como producto.
+- AliExpress: usa precio del producto + 19% IVA, porque el envio se considera incluido, y abre MeliCalc con envio apagado.
