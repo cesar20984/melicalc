@@ -1,0 +1,16 @@
+{
+  "name": "melicalc",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vercel dev",
+    "check": "node --check api/settings.js && node --check api/calculations.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1"
+  },
+  "devDependencies": {
+    "vercel": "^44.2.6"
+  }
+}

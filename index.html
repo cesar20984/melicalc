@@ -669,9 +669,10 @@
       saveStatus: document.getElementById('saveStatus')
     };
 
-    const DB_NAME = 'ml-price-calculator-db';
-    const DB_VERSION = 1;
-    let db;
+    const LOCAL_DB_NAME = 'ml-price-calculator-db';
+    const LOCAL_DB_VERSION = 1;
+    let localDb;
+    let useLocalStorageOnly = location.protocol === 'file:';
     let currentSavedName = '';
     let loadingFromDb = false;
 
@@ -698,9 +699,25 @@
         .replace(/'/g, '&#039;');
     }
 
-    function openDb() {
+    async function apiJson(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || 'API error');
+      }
+      return data;
+    }
+
+    function openLocalDb() {
       return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        const request = indexedDB.open(LOCAL_DB_NAME, LOCAL_DB_VERSION);
 
         request.onupgradeneeded = () => {
           const database = request.result;
@@ -717,37 +734,37 @@
       });
     }
 
-    function dbStore(storeName, mode = 'readonly') {
-      return db.transaction(storeName, mode).objectStore(storeName);
+    function localDbStore(storeName, mode = 'readonly') {
+      return localDb.transaction(storeName, mode).objectStore(storeName);
     }
 
-    function dbGet(storeName, key) {
+    function localDbGet(storeName, key) {
       return new Promise((resolve, reject) => {
-        const request = dbStore(storeName).get(key);
+        const request = localDbStore(storeName).get(key);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
     }
 
-    function dbGetAll(storeName) {
+    function localDbGetAll(storeName) {
       return new Promise((resolve, reject) => {
-        const request = dbStore(storeName).getAll();
+        const request = localDbStore(storeName).getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
     }
 
-    function dbPut(storeName, value) {
+    function localDbPut(storeName, value) {
       return new Promise((resolve, reject) => {
-        const request = dbStore(storeName, 'readwrite').put(value);
+        const request = localDbStore(storeName, 'readwrite').put(value);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
     }
 
-    function dbDelete(storeName, key) {
+    function localDbDelete(storeName, key) {
       return new Promise((resolve, reject) => {
-        const request = dbStore(storeName, 'readwrite').delete(key);
+        const request = localDbStore(storeName, 'readwrite').delete(key);
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
@@ -787,16 +804,29 @@
     }
 
     async function saveSettings() {
-      if (!db || loadingFromDb) return;
-      await dbPut('settings', {
-        key: 'defaults',
+      if (loadingFromDb) return;
+      const value = {
         shippingGross: els.shippingGross.value,
         packagingCost: els.packagingCost.value
+      };
+
+      if (useLocalStorageOnly) {
+        if (!localDb) return;
+        await localDbPut('settings', { key: 'defaults', ...value });
+        return;
+      }
+
+      await apiJson('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify(value)
       });
     }
 
     async function loadSettings() {
-      const settings = await dbGet('settings', 'defaults');
+      const settings = useLocalStorageOnly
+        ? await localDbGet('settings', 'defaults')
+        : await apiJson('/api/settings');
+
       if (!settings) return;
       loadingFromDb = true;
       els.shippingGross.value = settings.shippingGross ?? els.shippingGross.value;
@@ -806,7 +836,10 @@
     }
 
     async function renderSavedCalculations() {
-      const saved = await dbGetAll('calculations');
+      const saved = useLocalStorageOnly
+        ? await localDbGetAll('calculations')
+        : await apiJson('/api/calculations');
+
       saved.sort((a, b) => a.name.localeCompare(b.name, 'es'));
       const options = ['<option value="">Calculos guardados</option>'].concat(
         saved.map((item) => '<option value="' + encodeURIComponent(item.name) + '">' + escapeHtml(item.name) + '</option>')
@@ -820,11 +853,23 @@
     async function saveCalculation(name) {
       const cleanName = name.trim();
       if (!cleanName) return;
-      await dbPut('calculations', {
+      const payload = {
         name: cleanName,
-        updatedAt: new Date().toISOString(),
         data: getCurrentCalculation()
-      });
+      };
+
+      if (useLocalStorageOnly) {
+        await localDbPut('calculations', {
+          ...payload,
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        await apiJson('/api/calculations', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+      }
+
       currentSavedName = cleanName;
       await renderSavedCalculations();
       setStatus('Guardado: ' + cleanName);
@@ -847,7 +892,10 @@
       const selected = els.savedCalculations.value;
       if (!selected) return;
       const name = decodeURIComponent(selected);
-      const saved = await dbGet('calculations', name);
+      const saved = useLocalStorageOnly
+        ? await localDbGet('calculations', name)
+        : await apiJson('/api/calculations?name=' + encodeURIComponent(name));
+
       if (!saved) return;
       currentSavedName = name;
       applyCalculation(saved.data);
@@ -859,7 +907,15 @@
       if (!selected) return;
       const name = decodeURIComponent(selected);
       if (!confirm('Eliminar "' + name + '"?')) return;
-      await dbDelete('calculations', name);
+
+      if (useLocalStorageOnly) {
+        await localDbDelete('calculations', name);
+      } else {
+        await apiJson('/api/calculations?name=' + encodeURIComponent(name), {
+          method: 'DELETE'
+        });
+      }
+
       if (currentSavedName === name) currentSavedName = '';
       await renderSavedCalculations();
       setStatus('Eliminado: ' + name);
@@ -1087,11 +1143,22 @@
     async function init() {
       recalc();
       try {
-        db = await openDb();
+        if (useLocalStorageOnly) {
+          localDb = await openLocalDb();
+          setStatus('Modo local: los datos se guardan en este navegador.');
+        }
         await loadSettings();
         await renderSavedCalculations();
       } catch (error) {
-        setStatus('Base de datos local no disponible.');
+        if (!useLocalStorageOnly && 'indexedDB' in window) {
+          useLocalStorageOnly = true;
+          localDb = await openLocalDb();
+          await loadSettings();
+          await renderSavedCalculations();
+          setStatus('Neon no disponible; usando guardado local.');
+          return;
+        }
+        setStatus('Base de datos no disponible.');
       }
     }
 
