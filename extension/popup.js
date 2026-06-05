@@ -43,6 +43,7 @@ const els = {
 };
 
 let currentSiteType = 'other';
+let currentProductTitle = '';
 let lastTotals = {
   seaUnitLanded: 0,
   airBestUnitLanded: 0
@@ -67,6 +68,7 @@ function setStatus(text) {
 function getWorkState() {
   return {
     currentSiteType,
+    currentProductTitle,
     lastTotals,
     llmNotes: els.llmNotes.textContent,
     productPrice: els.productPrice.value,
@@ -96,6 +98,7 @@ function applyWorkState(state) {
   if (!state) return false;
   restoringState = true;
   currentSiteType = state.currentSiteType || currentSiteType;
+  currentProductTitle = state.currentProductTitle || currentProductTitle;
   lastTotals = state.lastTotals || lastTotals;
   els.siteBadge.textContent = currentSiteType.toUpperCase();
   els.llmNotes.textContent = state.llmNotes || '';
@@ -121,6 +124,7 @@ async function clearWorkState() {
   await chrome.storage.local.remove('workState');
   restoringState = true;
   currentSiteType = 'manual';
+  currentProductTitle = '';
   lastTotals = { seaUnitLanded: 0, airBestUnitLanded: 0 };
   els.siteBadge.textContent = 'MANUAL';
   els.llmNotes.textContent = '';
@@ -286,6 +290,7 @@ async function extractWithOpenAI(page) {
 
 function applyExtraction(extracted) {
   currentSiteType = extracted.siteType || currentSiteType;
+  currentProductTitle = extracted.productTitle || '';
   els.siteBadge.textContent = currentSiteType.toUpperCase();
   els.productPrice.value = extracted.unitPrice || '';
   els.currency.value = extracted.currency || 'USD';
@@ -407,13 +412,11 @@ function updateModeForSite() {
 async function openCalculator(unitLandedGross) {
   await saveWorkStateNow();
   const params = new URLSearchParams({
-    productGross: Math.round(unitLandedGross).toString(),
-    includeShipping: 'false',
-    shippingGross: '0',
-    packagingCost: '150',
-    profitPercent: '40',
-    mlRate: '19'
+    productGross: Math.round(unitLandedGross).toString()
   });
+  if (currentProductTitle) {
+    params.set('name', currentProductTitle.slice(0, 120));
+  }
   await chrome.tabs.create({ url: `${MELICALC_BASE}?${params.toString()}` });
 }
 

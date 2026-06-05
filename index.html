@@ -675,6 +675,7 @@
     let localDb;
     let useLocalStorageOnly = location.protocol === 'file:';
     let currentSavedName = '';
+    let suggestedSavedName = '';
     let loadingFromDb = false;
 
     function money(value) {
@@ -826,6 +827,10 @@
         els.manualFinalPrice.value = params.get('manualFinalPrice') || params.get('finalPriceGross');
       }
       if (params.has('mlRate')) els.mlRate.value = params.get('mlRate');
+      if (params.has('name')) {
+        suggestedSavedName = params.get('name').trim();
+        setStatus('Nombre sugerido: ' + suggestedSavedName);
+      }
       recalc();
       loadingFromDb = false;
       setStatus('Datos cargados desde URL.');
@@ -905,14 +910,14 @@
     }
 
     async function saveCurrentCalculation() {
-      const defaultName = currentSavedName || '';
-      const name = defaultName || prompt('Nombre del calculo:');
+      const defaultName = currentSavedName || suggestedSavedName || '';
+      const name = currentSavedName || prompt('Nombre del calculo:', defaultName);
       if (!name) return;
       await saveCalculation(name);
     }
 
     async function saveAsNewCalculation() {
-      const name = prompt('Nombre del nuevo calculo:');
+      const name = prompt('Nombre del nuevo calculo:', suggestedSavedName || currentSavedName || '');
       if (!name) return;
       await saveCalculation(name);
     }

@@ -96,7 +96,7 @@ El addon puede:
 - Mantener la cuenta en curso aunque se cierre el popup del addon.
 - Calcular unidades por metro cubico, envio por barco y envio por avion.
 - Mostrar costo unitario puesto en Chile por barco y por avion.
-- Abrir `https://melicalc-xi.vercel.app/` con el costo unitario puesto en Chile como precio del producto, sin tocar el envio de MeliCalc.
+- Abrir `https://melicalc-xi.vercel.app/` con el costo unitario puesto en Chile como precio del producto y un nombre sugerido, sin tocar envio, empaque, comision ni porcentaje en MeliCalc.
 
 Configura dentro del popup:
 
@@ -125,4 +125,4 @@ Nota: DHL/UPS/FedEx quedan como tarifas configurables por kg. Para consultar API
 Flujo actual:
 
 - Alibaba: calcula costo unitario puesto en Chile por barco o avion y abre MeliCalc con ese valor como producto.
-- AliExpress: usa precio del producto + 19% IVA, porque el envio se considera incluido, y abre MeliCalc con envio apagado.
+- AliExpress: usa precio del producto + 19% IVA, porque el envio se considera incluido, y abre MeliCalc con ese valor como producto.
