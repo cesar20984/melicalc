@@ -198,7 +198,7 @@
 
     .save-actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr auto;
       gap: 8px;
     }
 
@@ -609,6 +609,7 @@
           <div class="save-actions">
             <button id="saveCurrent" type="button">Guardar</button>
             <button id="saveAsNew" type="button">Guardar nuevo</button>
+            <button id="resetCalculator" type="button">Cero</button>
           </div>
           <div class="saved-toolbar">
             <select id="savedCalculations" aria-label="Calculos guardados">
@@ -758,6 +759,7 @@
       notesBox: document.getElementById('notesBox'),
       saveCurrent: document.getElementById('saveCurrent'),
       saveAsNew: document.getElementById('saveAsNew'),
+      resetCalculator: document.getElementById('resetCalculator'),
       savedCalculations: document.getElementById('savedCalculations'),
       deleteSaved: document.getElementById('deleteSaved'),
       saveStatus: document.getElementById('saveStatus'),
@@ -1227,6 +1229,41 @@
       });
     }
 
+    function renderZeroState() {
+      els.finalPriceText.textContent = '$0';
+      els.profitText.textContent = '$0';
+      els.marginText.textContent = '0,00%';
+      els.mainBreakdown.innerHTML = [
+        row('Producto neto', 0, '$0 / 1,19'),
+        row('Envio neto', 0, 'sin producto ingresado'),
+        row('Empaque neto', 0, 'sin producto ingresado'),
+        totalRow('Costo neto total', 0, 'producto neto + envio neto + empaque neto')
+      ].join('');
+      els.vatBreakdown.innerHTML = [
+        totalRow('Total IVA debito', 0, 'sin venta calculada'),
+        totalRow('Total IVA credito', 0, 'sin producto ingresado'),
+        totalRow('IVA estimado a pagar', 0, 'total debito - total credito')
+      ].join('');
+      els.formulaBox.innerHTML =
+        '<p><strong>Ingresa un producto para calcular.</strong></p>' +
+        '<p>Cuando el producto esta en $0, la calculadora no usa envio ni empaque para inventar un precio final.</p>';
+      els.acosText.textContent = '0,00%';
+      els.adBreakdown.innerHTML = '';
+      els.notesBox.innerHTML =
+        '<p><strong>Modo fijo:</strong> esta calculadora asume que facturas y recuperas IVA.</p>';
+      if (num(els.inverseFinalPrice) > 0) {
+        renderInverse({
+          productGross: 0,
+          includeShipping: els.includeShipping.checked,
+          shippingGross: num(els.shippingGross),
+          packagingCost: num(els.packagingCost),
+          mlRate: num(els.mlRate) / 100
+        });
+      } else {
+        renderInverseZeroState();
+      }
+    }
+
     function computeInverse(data) {
       const finalGross = num(els.inverseFinalPrice);
       const desiredProfitPercent = num(els.inverseProfitPercent) / 100;
@@ -1284,6 +1321,18 @@
         '<p>Costo fijo aplicado: ' + fixedFeeRule(inverse.finalGross) + '.</p>';
     }
 
+    function renderInverseZeroState() {
+      els.inverseMaxProduct.textContent = '$0';
+      els.inverseCurrentProfit.textContent = '$0';
+      els.inverseCurrentProfit.classList.remove('negative');
+      els.inverseTargetProfit.textContent = '$0';
+      els.inverseTargetProfit.classList.remove('negative');
+      els.inverseDifference.textContent = '$0';
+      els.inverseDifference.classList.remove('negative');
+      els.inverseFormulaBox.innerHTML =
+        '<p><strong>Ingresa un precio final de venta para calcular el maximo puesto en Chile.</strong></p>';
+    }
+
     function recalc() {
       setModeVisibility();
 
@@ -1299,6 +1348,13 @@
         mlRate: num(els.mlRate) / 100
       };
 
+      if (data.productGross <= 0) {
+        renderZeroState();
+        if (data.marginMode !== 'amount') els.profitAmount.value = '0';
+        if (data.marginMode !== 'price') els.manualFinalPrice.value = '0';
+        return;
+      }
+
       const r = computeRecoveringVat(data);
       const margin = r.costNet > 0 ? (r.realProfit / r.costNet) * 100 : 0;
       els.finalPriceText.textContent = money(r.finalGross);
@@ -1311,6 +1367,24 @@
       if (data.marginMode !== 'amount') els.profitAmount.value = Math.round(r.realProfit);
       if (data.marginMode !== 'percent') els.profitPercent.value = margin.toFixed(2);
       if (data.marginMode !== 'price') els.manualFinalPrice.value = Math.round(r.finalGross);
+    }
+
+    function resetCalculatorToZero() {
+      history.replaceState(null, '', window.location.pathname);
+      currentSavedName = '';
+      suggestedSavedName = '';
+      currentProductUrl = '';
+      renderProductLink();
+      els.productGross.value = '0';
+      els.marginMode.value = 'percent';
+      els.profitPercent.value = '40';
+      els.profitAmount.value = '0';
+      els.manualFinalPrice.value = '0';
+      els.inverseFinalPrice.value = '0';
+      els.inverseProfitPercent.value = '40';
+      els.savedCalculations.value = '';
+      recalc();
+      setStatus('Calculadora en cero.');
     }
 
     [els.productGross, els.includeShipping, els.shippingGross, els.packagingCost, els.mlRate, els.inverseFinalPrice, els.inverseProfitPercent].forEach((el) => {
@@ -1346,6 +1420,8 @@
     els.saveAsNew.addEventListener('click', () => {
       saveAsNewCalculation().catch(() => setStatus('No se pudo guardar.'));
     });
+
+    els.resetCalculator.addEventListener('click', resetCalculatorToZero);
 
     els.savedCalculations.addEventListener('change', () => {
       loadSelectedCalculation().catch(() => setStatus('No se pudo cargar.'));
