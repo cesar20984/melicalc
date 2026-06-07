@@ -98,7 +98,6 @@ El addon puede:
 - Calcular unidades por metro cubico, envio por barco y envio por avion.
 - Mostrar costo unitario puesto en Chile por barco y por avion.
 - Abrir `https://melicalc-xi.vercel.app/` con el costo unitario puesto en Chile como precio del producto y un nombre sugerido, sin tocar envio, empaque, comision ni porcentaje en MeliCalc.
-- Revisar una venta objetivo: ingresas un precio final CLP y un porcentaje de ganancia, y el addon muestra la ganancia estimada y el costo unitario maximo que deberia tener puesto en Chile.
 
 Configura dentro del popup:
 

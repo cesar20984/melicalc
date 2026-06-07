@@ -387,6 +387,44 @@
       width: 120px;
     }
 
+    .inverse-box {
+      margin-top: 16px;
+    }
+
+    .inverse-inputs,
+    .inverse-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .inverse-metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfd;
+    }
+
+    .inverse-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .inverse-metric strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--accent-dark);
+      font-size: 1.25rem;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .inverse-metric .negative {
+      color: var(--danger);
+    }
+
     @media (max-width: 880px) {
       .layout,
       .grid-two,
@@ -475,6 +513,11 @@
 
       .save-actions,
       .saved-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .inverse-inputs,
+      .inverse-metrics {
         grid-template-columns: 1fr;
       }
 
@@ -649,6 +692,39 @@
             <div id="notesBox" class="callout"></div>
           </div>
         </div>
+
+        <div class="section inverse-box mobile-secondary">
+          <h2>Precio maximo puesto en Chile</h2>
+          <div class="inverse-inputs">
+            <div class="field">
+              <label for="inverseFinalPrice">Precio final de venta con IVA</label>
+              <input id="inverseFinalPrice" type="number" min="0" step="1" inputmode="numeric" value="0">
+            </div>
+            <div class="field">
+              <label for="inverseProfitPercent">Ganancia deseada %</label>
+              <input id="inverseProfitPercent" type="number" min="0" step="0.01" inputmode="decimal" value="40">
+            </div>
+          </div>
+          <div class="inverse-metrics">
+            <div class="inverse-metric">
+              <span>Producto maximo puesto en Chile</span>
+              <strong id="inverseMaxProduct">$0</strong>
+            </div>
+            <div class="inverse-metric">
+              <span>Ganancia con producto actual</span>
+              <strong id="inverseCurrentProfit">$0</strong>
+            </div>
+            <div class="inverse-metric">
+              <span>Ganancia si compras al maximo</span>
+              <strong id="inverseTargetProfit">$0</strong>
+            </div>
+            <div class="inverse-metric">
+              <span>Diferencia vs producto actual</span>
+              <strong id="inverseDifference">$0</strong>
+            </div>
+          </div>
+          <div id="inverseFormulaBox" class="callout ok"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -684,7 +760,14 @@
       saveAsNew: document.getElementById('saveAsNew'),
       savedCalculations: document.getElementById('savedCalculations'),
       deleteSaved: document.getElementById('deleteSaved'),
-      saveStatus: document.getElementById('saveStatus')
+      saveStatus: document.getElementById('saveStatus'),
+      inverseFinalPrice: document.getElementById('inverseFinalPrice'),
+      inverseProfitPercent: document.getElementById('inverseProfitPercent'),
+      inverseMaxProduct: document.getElementById('inverseMaxProduct'),
+      inverseCurrentProfit: document.getElementById('inverseCurrentProfit'),
+      inverseTargetProfit: document.getElementById('inverseTargetProfit'),
+      inverseDifference: document.getElementById('inverseDifference'),
+      inverseFormulaBox: document.getElementById('inverseFormulaBox')
     };
 
     const LOCAL_DB_NAME = 'ml-price-calculator-db';
@@ -814,7 +897,9 @@
         profitPercent: els.profitPercent.value,
         profitAmount: els.profitAmount.value,
         manualFinalPrice: els.manualFinalPrice.value,
-        mlRate: els.mlRate.value
+        mlRate: els.mlRate.value,
+        inverseFinalPrice: els.inverseFinalPrice.value,
+        inverseProfitPercent: els.inverseProfitPercent.value
       };
     }
 
@@ -831,6 +916,8 @@
       els.profitAmount.value = calc.profitAmount ?? '0';
       els.manualFinalPrice.value = calc.manualFinalPrice ?? '0';
       els.mlRate.value = calc.mlRate ?? '19';
+      els.inverseFinalPrice.value = calc.inverseFinalPrice ?? '0';
+      els.inverseProfitPercent.value = calc.inverseProfitPercent ?? '40';
       recalc();
       loadingFromDb = false;
     }
@@ -857,6 +944,8 @@
         els.manualFinalPrice.value = params.get('manualFinalPrice') || params.get('finalPriceGross');
       }
       if (params.has('mlRate')) els.mlRate.value = params.get('mlRate');
+      if (params.has('inverseFinalPrice')) els.inverseFinalPrice.value = params.get('inverseFinalPrice');
+      if (params.has('inverseProfitPercent')) els.inverseProfitPercent.value = params.get('inverseProfitPercent');
       if (params.has('name')) {
         suggestedSavedName = params.get('name').trim();
         setStatus('Nombre sugerido: ' + suggestedSavedName);
@@ -1138,6 +1227,63 @@
       });
     }
 
+    function computeInverse(data) {
+      const finalGross = num(els.inverseFinalPrice);
+      const desiredProfitPercent = num(els.inverseProfitPercent) / 100;
+      const finalNet = finalGross / IVA_FACTOR;
+      const fixedFeeGross = getFixedFeeGross(finalGross);
+      const fixedFeeNet = fixedFeeGross / IVA_FACTOR;
+      const commissionNet = finalNet * data.mlRate;
+      const shippingNet = data.includeShipping ? data.shippingGross / IVA_FACTOR : 0;
+      const packagingNet = data.packagingCost / IVA_FACTOR;
+      const availableNet = finalNet - commissionNet - fixedFeeNet;
+      const maxCostNet = desiredProfitPercent >= 0 ? availableNet / (1 + desiredProfitPercent) : 0;
+      const maxProductNet = Math.max(0, maxCostNet - shippingNet - packagingNet);
+      const maxProductGross = maxProductNet * IVA_FACTOR;
+      const currentProductNet = data.productGross / IVA_FACTOR;
+      const currentCostNet = currentProductNet + shippingNet + packagingNet;
+      const currentProfit = availableNet - currentCostNet;
+      const desiredProfitNet = maxCostNet * desiredProfitPercent;
+      const differenceGross = maxProductGross - data.productGross;
+
+      return {
+        finalGross,
+        finalNet,
+        fixedFeeGross,
+        fixedFeeNet,
+        commissionNet,
+        shippingNet,
+        packagingNet,
+        availableNet,
+        maxCostNet,
+        maxProductNet,
+        maxProductGross,
+        currentProfit,
+        desiredProfitNet,
+        differenceGross
+      };
+    }
+
+    function renderInverse(data) {
+      const inverse = computeInverse(data);
+      els.inverseMaxProduct.textContent = money(inverse.maxProductGross);
+      els.inverseCurrentProfit.textContent = money(inverse.currentProfit);
+      els.inverseCurrentProfit.classList.toggle('negative', inverse.currentProfit < 0);
+      els.inverseTargetProfit.textContent = money(inverse.desiredProfitNet);
+      els.inverseTargetProfit.classList.toggle('negative', inverse.desiredProfitNet < 0);
+      els.inverseDifference.textContent = money(inverse.differenceGross);
+      els.inverseDifference.classList.toggle('negative', inverse.differenceGross < 0);
+
+      els.inverseFormulaBox.innerHTML =
+        '<p><strong>Cuenta inversa:</strong></p>' +
+        '<p>Disponible neto = precio venta neto - comision ML neta - costo fijo ML neto.</p>' +
+        '<p>' + money(inverse.finalNet) + ' - ' + money(inverse.commissionNet) + ' - ' + money(inverse.fixedFeeNet) + ' = ' + money(inverse.availableNet) + ' disponible neto.</p>' +
+        '<p>Costo neto maximo = disponible neto / (1 + ganancia deseada). Con ' + pct(num(els.inverseProfitPercent)) + ': ' + money(inverse.maxCostNet) + '.</p>' +
+        '<p>Producto maximo puesto en Chile = (costo neto maximo - envio neto - empaque neto) x 1,19.</p>' +
+        '<p>(' + money(inverse.maxCostNet) + ' - ' + money(inverse.shippingNet) + ' - ' + money(inverse.packagingNet) + ') x 1,19 = ' + money(inverse.maxProductGross) + '.</p>' +
+        '<p>Costo fijo aplicado: ' + fixedFeeRule(inverse.finalGross) + '.</p>';
+    }
+
     function recalc() {
       setModeVisibility();
 
@@ -1160,13 +1306,14 @@
       els.marginText.textContent = pct(margin);
       renderRecoveringVat(data, r);
       renderAds(r.finalGross, r.realProfit);
+      renderInverse(data);
 
       if (data.marginMode !== 'amount') els.profitAmount.value = Math.round(r.realProfit);
       if (data.marginMode !== 'percent') els.profitPercent.value = margin.toFixed(2);
       if (data.marginMode !== 'price') els.manualFinalPrice.value = Math.round(r.finalGross);
     }
 
-    [els.productGross, els.includeShipping, els.shippingGross, els.packagingCost, els.mlRate].forEach((el) => {
+    [els.productGross, els.includeShipping, els.shippingGross, els.packagingCost, els.mlRate, els.inverseFinalPrice, els.inverseProfitPercent].forEach((el) => {
       el.addEventListener('input', recalc);
       el.addEventListener('change', recalc);
     });
