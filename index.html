@@ -39,7 +39,7 @@
     }
 
     main {
-      width: min(1120px, calc(100% - 16px));
+      width: min(1460px, calc(100% - 16px));
       margin: 0 auto;
       padding: 8px 0 24px;
     }
@@ -81,7 +81,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(310px, 390px) 1fr;
+      grid-template-columns: minmax(310px, 390px) minmax(560px, 1fr) minmax(320px, 390px);
       gap: 10px;
       align-items: start;
     }
@@ -312,6 +312,17 @@
       align-content: start;
     }
 
+    .side-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .side-panel .grid-two {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 0 !important;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -447,6 +458,10 @@
       }
 
       .result-panel {
+        display: contents;
+      }
+
+      .side-panel {
         display: contents;
       }
 
@@ -679,7 +694,9 @@
           <h2>Como sale el precio</h2>
           <div id="formulaBox" class="callout ok"></div>
         </div>
+      </section>
 
+      <section class="panel side-panel" aria-label="Analisis adicional">
         <div class="grid-two mobile-secondary" style="margin-top:16px;">
           <div class="section">
             <h2>Publicidad</h2>
