@@ -421,6 +421,16 @@
       overflow-wrap: anywhere;
     }
 
+    .inverse-metric.primary {
+      border-color: #9bd8b4;
+      background: #eefaf3;
+    }
+
+    .inverse-metric.primary strong {
+      font-size: clamp(1.65rem, 3vw, 2.35rem);
+      color: var(--accent-dark);
+    }
+
     .inverse-metric .negative {
       color: var(--danger);
     }
@@ -707,20 +717,20 @@
             </div>
           </div>
           <div class="inverse-metrics">
-            <div class="inverse-metric">
-              <span>Producto maximo puesto en Chile</span>
+            <div class="inverse-metric primary">
+              <span>Maximo que puedes pagar puesto en Chile</span>
               <strong id="inverseMaxProduct">$0</strong>
             </div>
             <div class="inverse-metric">
-              <span>Ganancia con producto actual</span>
+              <span>Ganancia si usas tu costo actual</span>
               <strong id="inverseCurrentProfit">$0</strong>
             </div>
             <div class="inverse-metric">
-              <span>Ganancia si compras al maximo</span>
+              <span>Ganancia si pagas el maximo</span>
               <strong id="inverseTargetProfit">$0</strong>
             </div>
             <div class="inverse-metric">
-              <span>Diferencia vs producto actual</span>
+              <span>Cuanto debes bajar tu costo actual</span>
               <strong id="inverseDifference">$0</strong>
             </div>
           </div>
@@ -1281,7 +1291,7 @@
       const currentCostNet = currentProductNet + shippingNet + packagingNet;
       const currentProfit = availableNet - currentCostNet;
       const desiredProfitNet = maxCostNet * desiredProfitPercent;
-      const differenceGross = maxProductGross - data.productGross;
+      const costAdjustmentGross = data.productGross - maxProductGross;
 
       return {
         finalGross,
@@ -1297,7 +1307,7 @@
         maxProductGross,
         currentProfit,
         desiredProfitNet,
-        differenceGross
+        costAdjustmentGross
       };
     }
 
@@ -1308,8 +1318,16 @@
       els.inverseCurrentProfit.classList.toggle('negative', inverse.currentProfit < 0);
       els.inverseTargetProfit.textContent = money(inverse.desiredProfitNet);
       els.inverseTargetProfit.classList.toggle('negative', inverse.desiredProfitNet < 0);
-      els.inverseDifference.textContent = money(inverse.differenceGross);
-      els.inverseDifference.classList.toggle('negative', inverse.differenceGross < 0);
+      const adjustmentLabel = els.inverseDifference.previousElementSibling;
+      if (inverse.costAdjustmentGross > 0) {
+        adjustmentLabel.textContent = 'Debes bajar tu costo actual';
+        els.inverseDifference.textContent = money(inverse.costAdjustmentGross);
+        els.inverseDifference.classList.add('negative');
+      } else {
+        adjustmentLabel.textContent = 'Puedes pagar hasta este extra';
+        els.inverseDifference.textContent = money(Math.abs(inverse.costAdjustmentGross));
+        els.inverseDifference.classList.remove('negative');
+      }
 
       els.inverseFormulaBox.innerHTML =
         '<p><strong>Cuenta inversa:</strong></p>' +
@@ -1327,6 +1345,7 @@
       els.inverseCurrentProfit.classList.remove('negative');
       els.inverseTargetProfit.textContent = '$0';
       els.inverseTargetProfit.classList.remove('negative');
+      els.inverseDifference.previousElementSibling.textContent = 'Cuanto debes bajar tu costo actual';
       els.inverseDifference.textContent = '$0';
       els.inverseDifference.classList.remove('negative');
       els.inverseFormulaBox.innerHTML =
