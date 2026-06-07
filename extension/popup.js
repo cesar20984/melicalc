@@ -38,6 +38,12 @@ const els = {
   seaBreakdownTotal: document.getElementById('seaBreakdownTotal'),
   calcSeaBtn: document.getElementById('calcSeaBtn'),
   calcAirBtn: document.getElementById('calcAirBtn'),
+  suggestedName: document.getElementById('suggestedName'),
+  targetSalePrice: document.getElementById('targetSalePrice'),
+  targetMarginPercent: document.getElementById('targetMarginPercent'),
+  landedMode: document.getElementById('landedMode'),
+  targetProfit: document.getElementById('targetProfit'),
+  maxLandedCost: document.getElementById('maxLandedCost'),
   status: document.getElementById('status'),
   llmNotes: document.getElementById('llmNotes')
 };
@@ -79,7 +85,11 @@ function getWorkState() {
     weightKg: els.weightKg.value,
     lengthCm: els.lengthCm.value,
     widthCm: els.widthCm.value,
-    heightCm: els.heightCm.value
+    heightCm: els.heightCm.value,
+    suggestedName: els.suggestedName.value,
+    targetSalePrice: els.targetSalePrice.value,
+    targetMarginPercent: els.targetMarginPercent.value,
+    landedMode: els.landedMode.value
   };
 }
 
@@ -112,6 +122,10 @@ function applyWorkState(state) {
   els.lengthCm.value = state.lengthCm ?? els.lengthCm.value;
   els.widthCm.value = state.widthCm ?? els.widthCm.value;
   els.heightCm.value = state.heightCm ?? els.heightCm.value;
+  els.suggestedName.value = state.suggestedName ?? els.suggestedName.value;
+  els.targetSalePrice.value = state.targetSalePrice ?? els.targetSalePrice.value;
+  els.targetMarginPercent.value = state.targetMarginPercent ?? els.targetMarginPercent.value;
+  els.landedMode.value = state.landedMode ?? els.landedMode.value;
   updateModeForSite();
   recalc();
   restoringState = false;
@@ -139,6 +153,10 @@ async function clearWorkState() {
   els.lengthCm.value = '';
   els.widthCm.value = '';
   els.heightCm.value = '';
+  els.suggestedName.value = '';
+  els.targetSalePrice.value = '';
+  els.targetMarginPercent.value = '40';
+  els.landedMode.value = 'sea';
   updateModeForSite();
   recalc();
   restoringState = false;
@@ -218,10 +236,11 @@ function extractionSchema() {
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['siteType', 'productTitle', 'unitPrice', 'currency', 'dimensionsCm', 'weightKg', 'notes', 'confidence'],
+    required: ['siteType', 'productTitle', 'recommendedName', 'unitPrice', 'currency', 'dimensionsCm', 'weightKg', 'notes', 'confidence'],
     properties: {
       siteType: { type: 'string', enum: ['alibaba', 'aliexpress', 'other'] },
       productTitle: { type: 'string' },
+      recommendedName: { type: 'string' },
       unitPrice: { type: 'number' },
       currency: { type: 'string' },
       dimensionsCm: {
@@ -267,7 +286,7 @@ async function extractWithOpenAI(page) {
       input: [
         {
           role: 'system',
-          content: 'Extrae datos de producto para importacion a Chile. Responde solo con el JSON del schema. Si no ves un dato, usa 0 o string vacio. Dimensiones siempre en centimetros y peso en kg.'
+          content: 'Extrae datos de producto para importacion a Chile. Responde solo con el JSON del schema. Si no ves un dato, usa 0 o string vacio. Dimensiones siempre en centimetros y peso en kg. recommendedName debe ser un nombre corto, claro, en espanol, facil de entender y fiel al producto real, sin marketing exagerado.'
         },
         {
           role: 'user',
@@ -294,7 +313,8 @@ async function extractWithOpenAI(page) {
 
 function applyExtraction(extracted) {
   currentSiteType = extracted.siteType || currentSiteType;
-  currentProductTitle = extracted.productTitle || '';
+  currentProductTitle = extracted.recommendedName || extracted.productTitle || '';
+  els.suggestedName.value = currentProductTitle;
   els.siteBadge.textContent = currentSiteType.toUpperCase();
   els.productPrice.value = extracted.unitPrice || '';
   els.currency.value = extracted.currency || 'USD';
@@ -338,6 +358,32 @@ function upsHandlingFeeUsd(fobUsd) {
   if (fobUsd <= 1000) return 81.45;
   if (fobUsd <= 3000) return 168.35;
   return 168.35;
+}
+
+function getFixedFeeGross(finalGross) {
+  if (finalGross > 0 && finalGross <= 9990) return 700;
+  if (finalGross > 0 && finalGross <= 19990) return 1000;
+  return 0;
+}
+
+function targetSaleMath() {
+  const finalGross = num(els.targetSalePrice);
+  const margin = num(els.targetMarginPercent, 40) / 100;
+  const landedGross = currentSiteType === 'aliexpress'
+    ? productPriceClp() * 1.19
+    : (els.landedMode.value === 'air' ? lastTotals.airBestUnitLanded : lastTotals.seaUnitLanded);
+  const finalNet = finalGross / 1.19;
+  const fixedFeeNet = getFixedFeeGross(finalGross) / 1.19;
+  const commissionNet = finalNet * 0.19;
+  const availableNet = finalNet - commissionNet - fixedFeeNet;
+  const landedNet = landedGross / 1.19;
+  const profit = availableNet - landedNet;
+  const maxLandedNet = margin >= 0 ? availableNet / (1 + margin) : 0;
+
+  return {
+    profit,
+    maxLandedGross: maxLandedNet * 1.19
+  };
 }
 
 function importTotals(extraFreightClp) {
@@ -403,13 +449,23 @@ function recalc() {
   els.seaHandlingUnit.textContent = money(seaTotals.handlingPerUnit);
   els.seaIvaUnit.textContent = money(seaTotals.ivaPerUnit);
   els.seaBreakdownTotal.textContent = money(seaTotals.landedPerUnit);
+  renderTargetSale();
   scheduleSaveWorkState();
+}
+
+function renderTargetSale() {
+  const result = targetSaleMath();
+  els.targetProfit.textContent = money(result.profit);
+  els.targetProfit.style.color = result.profit < 0 ? '#c5362f' : '';
+  els.maxLandedCost.textContent = money(result.maxLandedGross);
 }
 
 function updateModeForSite() {
   const isAliExpress = currentSiteType === 'aliexpress';
   els.shippingPanel.classList.toggle('hidden', isAliExpress);
   els.calcSeaBtn.classList.toggle('hidden', isAliExpress);
+  els.landedMode.disabled = isAliExpress;
+  if (isAliExpress) els.landedMode.value = 'air';
   els.calcAirBtn.textContent = isAliExpress ? 'Abrir calculadora' : 'Abrir avion';
 }
 
@@ -418,8 +474,9 @@ async function openCalculator(unitLandedGross) {
   const params = new URLSearchParams({
     productGross: Math.round(unitLandedGross).toString()
   });
-  if (currentProductTitle) {
-    params.set('name', currentProductTitle.slice(0, 120));
+  const suggestedName = els.suggestedName.value.trim() || currentProductTitle;
+  if (suggestedName) {
+    params.set('name', suggestedName.slice(0, 120));
   }
   if (currentProductUrl) {
     params.set('productUrl', currentProductUrl);
@@ -484,6 +541,19 @@ els.refreshDollarBtn.addEventListener('click', () => {
   els.upsRateKg,
   els.fedexRateKg
 ].forEach((el) => el.addEventListener('input', recalc));
+
+[els.suggestedName, els.targetSalePrice, els.targetMarginPercent, els.landedMode].forEach((el) => {
+  el.addEventListener('input', () => {
+    currentProductTitle = els.suggestedName.value.trim();
+    renderTargetSale();
+    scheduleSaveWorkState();
+  });
+  el.addEventListener('change', () => {
+    currentProductTitle = els.suggestedName.value.trim();
+    renderTargetSale();
+    scheduleSaveWorkState();
+  });
+});
 
 els.calcSeaBtn.addEventListener('click', () => {
   openCalculator(lastTotals.seaUnitLanded).catch((error) => setStatus(error.message));

@@ -139,6 +139,37 @@
       <div id="status">Listo.</div>
       <div id="llmNotes"></div>
     </section>
+
+    <section class="panel">
+      <h2>Venta objetivo</h2>
+      <label>Nombre sugerido
+        <input id="suggestedName" type="text" placeholder="Extrae con IA para generar nombre">
+      </label>
+      <div class="grid">
+        <label>Precio venta CLP
+          <input id="targetSalePrice" type="number" min="0" step="1">
+        </label>
+        <label>Ganancia %
+          <input id="targetMarginPercent" type="number" min="0" step="0.01" value="40">
+        </label>
+      </div>
+      <label>Comparar con
+        <select id="landedMode">
+          <option value="sea">Unitario barco</option>
+          <option value="air">Unitario avion</option>
+        </select>
+      </label>
+      <div class="result-grid">
+        <div>
+          <span>Ganancia estimada</span>
+          <strong id="targetProfit">$0</strong>
+        </div>
+        <div>
+          <span>Max. puesto Chile</span>
+          <strong id="maxLandedCost">$0</strong>
+        </div>
+      </div>
+    </section>
   </main>
   <script src="popup.js"></script>
 </body>
